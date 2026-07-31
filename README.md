@@ -1,4 +1,5 @@
 <div align="center">
+    
 # CUDA.Zig
     
 <a href="https://muhammad-fiaz.github.io/cuda.zig/"><img src="https://img.shields.io/badge/docs-muhammad--fiaz.github.io-blue" alt="Documentation"></a>
