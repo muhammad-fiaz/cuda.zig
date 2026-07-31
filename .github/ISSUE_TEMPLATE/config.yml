@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions & Q&A
+    url: https://github.com/muhammad-fiaz/cuda.zig/discussions
+    about: Ask questions, share ideas, and discuss usage.
+  - name: Documentation
+    url: https://muhammad-fiaz.github.io/cuda.zig/
+    about: Browse the full documentation site.

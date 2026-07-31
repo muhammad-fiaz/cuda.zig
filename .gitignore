@@ -1,0 +1,43 @@
+# Zig build artifacts
+.zig-cache/
+zig-out/
+zig-cache/
+*.o
+*.obj
+*.ptx
+
+# VitePress & Node build artifacts
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/node_modules/
+node_modules/
+
+# Package lock (optional — remove if you want to commit it)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+ehthumbs.db
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*~
+
+# NVRTC / CUDA compiler cache
+cache/
+*.cubin
+*.fatbin
+
+# Environment / secrets
+.env
+.env.*
+!.env.example

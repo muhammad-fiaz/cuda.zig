@@ -1,0 +1,12 @@
+{
+  "name": "cuda.zig",
+  "short_name": "cuda.zig",
+  "description": "GPU Computing & CUDA Runtime API for Zig",
+  "icons": [
+    { "src": "/cuda.zig/favicon.png", "sizes": "any", "type": "image/png" }
+  ],
+  "start_url": "/cuda.zig/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#76b900"
+}

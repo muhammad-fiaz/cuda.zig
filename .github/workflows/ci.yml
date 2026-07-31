@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Format check
+        run: zig fmt --check src/ examples/ build.zig
+
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux
+          - os: macos-latest
+            name: macOS
+          - os: windows-latest
+            name: Windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Cache Zig build
+        uses: actions/cache@v6
+        with:
+          path: .zig-cache
+          key: zig-${{ runner.os }}-${{ hashFiles('src/**', 'build.zig', 'build.zig.zon') }}
+          restore-keys: zig-${{ runner.os }}-
+
+      - name: Unit tests
+        shell: bash
+        run: zig build test --summary all --test-timeout 30s
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+
+      - name: Build (Debug)
+        run: zig build -Doptimize=Debug
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+
+      - name: Build (ReleaseFast)
+        run: zig build -Doptimize=ReleaseFast
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+
+  cross-build:
+    name: Cross Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-macos
+          - aarch64-macos
+          - x86_64-windows
+          - x86-windows
+          - aarch64-linux
+          - x86-linux
+          - riscv64-linux
+          - arm-linux-gnueabihf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Cache Zig build
+        uses: actions/cache@v6
+        with:
+          path: .zig-cache
+          key: zig-cross-${{ matrix.target }}-${{ hashFiles('src/**', 'build.zig', 'build.zig.zon') }}
+          restore-keys: zig-cross-${{ matrix.target }}-
+
+      - name: Build
+        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=Debug
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache

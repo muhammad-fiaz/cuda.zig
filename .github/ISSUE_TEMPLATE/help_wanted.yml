@@ -1,0 +1,49 @@
+name: Help Wanted
+description: Get help using cuda.zig — builds, integration, API usage
+title: "[Help]: "
+labels: ["help wanted", "question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For usage questions, [Discussions](https://github.com/muhammad-fiaz/cuda.zig/discussions) is often faster than an issue. Fill in as much detail as you can.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Build / compilation
+        - API usage
+        - Device or memory management
+        - Kernel launch
+        - Tensor operations
+        - CPU fallback behavior
+        - NVRTC / runtime compilation
+        - Multi-GPU
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Relevant Code
+      render: zig
+    validations:
+      required: false
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error or Unexpected Output
+      render: shell
+    validations:
+      required: false
