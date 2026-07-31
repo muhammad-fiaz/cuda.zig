@@ -1,5 +1,6 @@
 <div align="center">
-
+# CUDA.Zig
+    
 <a href="https://muhammad-fiaz.github.io/cuda.zig/"><img src="https://img.shields.io/badge/docs-muhammad--fiaz.github.io-blue" alt="Documentation"></a>
 <a href="https://ziglang.org/"><img src="https://img.shields.io/badge/Zig-0.16.0-orange.svg?logo=zig" alt="Zig Version"></a>
 <a href="https://github.com/muhammad-fiaz/cuda.zig"><img src="https://img.shields.io/github/stars/muhammad-fiaz/cuda.zig" alt="GitHub stars"></a>
@@ -25,7 +26,7 @@
 
 </div>
 
-`cuda.zig` is a modern, production-grade native CUDA library for Zig. It provides complete zero-link-dependency dynamic loading for CUDA 12.x and 13.x (including CUDA 13.3), raw Driver and Runtime FFI bindings, high-level device/memory/stream abstractions, typed multi-dimensional `Tensor(T)` operations, NVRTC runtime compilation, and an automatic CPU fallback backend when no NVIDIA GPU is present.
+`cuda.zig` is a modern, production-grade CUDA library for Zig, featuring zero-link dynamic loading, complete CUDA Driver and Runtime bindings, high-level GPU abstractions, typed tensor operations, NVRTC runtime compilation, and automatic CPU fallback.
 
 > [!TIP]
 > If you build with cuda.zig, make sure to give it a star. ⭐
