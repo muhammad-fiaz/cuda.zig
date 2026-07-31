@@ -1,0 +1,38 @@
+name: Documentation Issue
+description: Report missing, incorrect, or unclear documentation
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found something wrong or missing in the [docs](https://muhammad-fiaz.github.io/cuda.zig/)? Let us know!
+
+  - type: input
+    id: doc_url
+    attributes:
+      label: Documentation Page URL
+      placeholder: "https://muhammad-fiaz.github.io/cuda.zig/guide/getting-started"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Type of Issue
+      options:
+        - Missing documentation
+        - Incorrect information
+        - Outdated content
+        - Typo or formatting
+        - Unclear explanation
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain what is wrong or missing and how it should be improved.
+    validations:
+      required: true
