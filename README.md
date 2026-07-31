@@ -16,7 +16,7 @@
 <a href="https://github.com/sponsors/muhammad-fiaz"><img src="https://img.shields.io/badge/Sponsor-GitHub-pink?style=social&logo=github" alt="GitHub Sponsors"></a>
 <a href="https://hits.sh/muhammad-fiaz/cuda.zig/"><img src="https://hits.sh/muhammad-fiaz/cuda.zig.svg?label=Visitors&extraCount=0&color=green" alt="Repo Visitors"></a>
 
-<p><em>A production-ready, high-performance CUDA Runtime and Driver API library for Zig with transparent CPU fallback.</em></p>
+<p><em>A production-ready, high-performance CUDA Runtime and Driver API library for Zig.</em></p>
 
 <b><a href="https://muhammad-fiaz.github.io/cuda.zig/">Documentation</a> |
 <a href="https://muhammad-fiaz.github.io/cuda.zig/api/">API Reference</a> |
