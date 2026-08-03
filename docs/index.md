@@ -47,5 +47,6 @@ features:
       args.zig (args parsing), httpx.zig (HTTP client/server), api.zig (API framework),
       zix (web framework), archive.zig (archive/compression), zigx (compression file formats),
       downloader.zig (file downloading), updater.zig (auto-updater), num.zig (numerical computing),
-      logly.zig (logging), zigantic (data validation/serialization), buildx.zig (build tooling).
+      logly.zig (logging), zigantic (data validation/serialization), buildx.zig (build tooling),
+      cuda.zig (CUDA/GPU computing).
 ---
