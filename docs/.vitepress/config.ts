@@ -227,6 +227,7 @@ export default defineConfig({
       { text: "Guide", link: "/guide/getting-started" },
       { text: "API", link: "/api/" },
       { text: "Examples", link: "/examples/" },
+      { text: "Projects", link: "/guide/related-projects" },
       {
         text: "Support",
         items: [
@@ -259,6 +260,7 @@ export default defineConfig({
             { text: "Tensor Operations", link: "/guide/tensor-ops" },
             { text: "CUDA Allocator", link: "/guide/allocator" },
             { text: "Version Compatibility", link: "/guide/version-compat" },
+            { text: "Related Projects", link: "/guide/related-projects" },
           ],
         },
       ],

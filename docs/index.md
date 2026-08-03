@@ -39,4 +39,13 @@ features:
   - icon: 🌐
     title: Multi-GPU Peer Access
     details: Query and enable peer-to-peer device access, perform cross-device memcpy, and orchestrate multi-GPU workloads.
+  - icon: 📦
+    title: Related Zig Projects
+    details: >
+      Part of a growing Zig ecosystem: env.zig (env parsing), tui.zig (TUI support),
+      zon.zig (ZON file format), loaders.zig (spinners/loading/progress), mcp.zig (MCP support),
+      args.zig (args parsing), httpx.zig (HTTP client/server), api.zig (API framework),
+      zix (web framework), archive.zig (archive/compression), zigx (compression file formats),
+      downloader.zig (file downloading), updater.zig (auto-updater), num.zig (numerical computing),
+      logly.zig (logging), zigantic (data validation/serialization), buildx.zig (build tooling).
 ---
