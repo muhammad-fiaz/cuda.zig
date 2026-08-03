@@ -7,58 +7,26 @@ description: Explore the growing ecosystem of Zig libraries that complement cuda
 
 cuda.zig is part of a growing ecosystem of Zig libraries by [Muhammad Fiaz](https://github.com/muhammad-fiaz). These projects are designed to work together, providing a complete toolkit for building modern, high-performance Zig applications.
 
-## Environment & Configuration
+**Related Zig projects:**
 
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **env.zig** | `.env` file parsing for Zig projects | [GitHub](https://github.com/muhammad-fiaz/env.zig) |
-| **args.zig** | Command-line argument parsing | [GitHub](https://github.com/muhammad-fiaz/args.zig) |
-| **zon.zig** | ZON file format support | [GitHub](https://github.com/muhammad-fiaz/zon.zig) |
-
-## User Interface
-
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **tui.zig** | Terminal User Interface (TUI) support | [GitHub](https://github.com/muhammad-fiaz/tui.zig) |
-| **loaders.zig** | Spinners, loading indicators, and progress bars | [GitHub](https://github.com/muhammad-fiaz/loaders.zig) |
-
-## Networking & APIs
-
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **httpx.zig** | HTTP client and server support | [GitHub](https://github.com/muhammad-fiaz/httpx.zig) |
-| **api.zig** | API framework for building REST/GraphQL services | [GitHub](https://github.com/muhammad-fiaz/api.zig) |
-| **zix** | Web framework for Zig | [GitHub](https://github.com/muhammad-fiaz/zix) |
-| **mcp.zig** | Model Context Protocol (MCP) support | [GitHub](https://github.com/muhammad-fiaz/mcp.zig) |
-
-## Data & Serialization
-
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **zigantic** | Data validation and serialization | [GitHub](https://github.com/muhammad-fiaz/zigantic) |
-| **num.zig** | Numerical computing support | [GitHub](https://github.com/muhammad-fiaz/num.zig) |
-
-## File Operations & Compression
-
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **archive.zig** | Archive and compression support | [GitHub](https://github.com/muhammad-fiaz/archive.zig) |
-| **zigx** | Compression file format support | [GitHub](https://github.com/muhammad-fiaz/zigx) |
-| **downloader.zig** | File downloading support | [GitHub](https://github.com/muhammad-fiaz/downloader.zig) |
-
-## Development Tools
-
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **buildx.zig** | Build tooling and utilities | [GitHub](https://github.com/muhammad-fiaz/buildx.zig) |
-| **updater.zig** | Update checker and auto-updater | [GitHub](https://github.com/muhammad-fiaz/updater.zig) |
-| **logly.zig** | Logging support | [GitHub](https://github.com/muhammad-fiaz/logly.zig) |
-
-## GPU Computing
-
-| Project | Description | Repository |
-|---------|-------------|------------|
-| **cuda.zig** | CUDA Runtime and Driver API for Zig | [GitHub](https://github.com/muhammad-fiaz/cuda.zig) |
+- For **env.zig** (.env parsing), check out **[env.zig](https://github.com/muhammad-fiaz/env.zig)**.
+- For **TUI** support, check out **[tui.zig](https://github.com/muhammad-fiaz/tui.zig)**.
+- For **ZON file format** support, check out **[zon.zig](https://github.com/muhammad-fiaz/zon.zig)**.
+- For **spinners/loading/progress bar** support, check out **[loaders.zig](https://github.com/muhammad-fiaz/loaders.zig)**.
+- For **MCP** support, check out **[mcp.zig](https://github.com/muhammad-fiaz/mcp.zig)**.
+- For **args parsing** support, check out **[args.zig](https://github.com/muhammad-fiaz/args.zig)**.
+- For **HTTP client/server** support, check out **[httpx.zig](https://github.com/muhammad-fiaz/httpx.zig)**.
+- For **API framework** support, check out **[api.zig](https://github.com/muhammad-fiaz/api.zig)**.
+- For **web framework** support, check out **[zix](https://github.com/muhammad-fiaz/zix)**.
+- For **archive/compression** support, check out **[archive.zig](https://github.com/muhammad-fiaz/archive.zig)**.
+- For **compression file format** support, check out **[zigx](https://github.com/muhammad-fiaz/zigx)**.
+- For **file downloading** support, check out **[downloader.zig](https://github.com/muhammad-fiaz/downloader.zig)**.
+- For **update checker/auto-updater** support, check out **[updater.zig](https://github.com/muhammad-fiaz/updater.zig)**.
+- For **numerical computing** support, check out **[num.zig](https://github.com/muhammad-fiaz/num.zig)**.
+- For **logging** support, check out **[logly.zig](https://github.com/muhammad-fiaz/logly.zig)**.
+- For **data validation and serialization** support, check out **[zigantic](https://github.com/muhammad-fiaz/zigantic)**.
+- For **build tooling** support, check out **[buildx.zig](https://github.com/muhammad-fiaz/buildx.zig)**.
+- For **CUDA/GPU computing** support, check out **[cuda.zig](https://github.com/muhammad-fiaz/cuda.zig)**.
 
 ## Getting Started
 

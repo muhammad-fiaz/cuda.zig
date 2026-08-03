@@ -42,11 +42,8 @@ features:
   - icon: 📦
     title: Related Zig Projects
     details: >
-      Part of a growing Zig ecosystem: env.zig (env parsing), tui.zig (TUI support),
-      zon.zig (ZON file format), loaders.zig (spinners/loading/progress), mcp.zig (MCP support),
-      args.zig (args parsing), httpx.zig (HTTP client/server), api.zig (API framework),
-      zix (web framework), archive.zig (archive/compression), zigx (compression file formats),
-      downloader.zig (file downloading), updater.zig (auto-updater), num.zig (numerical computing),
-      logly.zig (logging), zigantic (data validation/serialization), buildx.zig (build tooling),
-      cuda.zig (CUDA/GPU computing).
+      Part of a growing Zig ecosystem — see the full list in our documentation.
+      env.zig, tui.zig, zon.zig, loaders.zig, mcp.zig, args.zig, httpx.zig,
+      api.zig, zix, archive.zig, zigx, downloader.zig, updater.zig, num.zig,
+      logly.zig, zigantic, buildx.zig, cuda.zig.
 ---
