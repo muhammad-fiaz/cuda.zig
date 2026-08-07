@@ -79,6 +79,7 @@ fn platformLookup(handle: LibHandle, comptime T: type, name: [:0]const u8) ?T {
 extern "kernel32" fn LoadLibraryA(lpLibFileName: [*:0]const u8) callconv(.winapi) ?*anyopaque;
 extern "kernel32" fn FreeLibrary(hLibModule: *anyopaque) callconv(.winapi) i32;
 extern "kernel32" fn GetProcAddress(hModule: *anyopaque, lpProcName: [*:0]const u8) callconv(.winapi) ?*anyopaque;
+extern "kernel32" fn GetEnvironmentVariableA(lpName: [*:0]const u8, lpBuffer: [*]u8, nSize: u32) callconv(.winapi) u32;
 
 fn windows_LoadLibraryA(name: [*:0]const u8) ?*anyopaque {
     if (builtin.os.tag != .windows) return null;
@@ -95,60 +96,139 @@ fn windows_GetProcAddress(h: *anyopaque, name: [*:0]const u8) ?*anyopaque {
     return GetProcAddress(h, name);
 }
 
+/// Dynamically locates and opens a CUDA dynamic library.
+///
+/// Tries system default dynamic linker first (System32 / PATH / LD_LIBRARY_PATH).
+/// On Windows, if that fails, dynamically checks the `CUDA_PATH` environment
+/// variable, followed by any version-specific `CUDA_PATH_V*` environment variables
+/// created automatically by NVIDIA CUDA Toolkit installers (e.g. `CUDA_PATH_V13_4`, `CUDA_PATH_V12_8`).
+fn openWithCudaPath(dll_name: []const u8) ?LibHandle {
+    // 1. Try standard platform lookup first (system PATH / LD_LIBRARY_PATH)
+    if (platformOpen(dll_name)) |h| return h;
+
+    if (comptime builtin.os.tag != .windows) {
+        return null;
+    }
+
+    // 2. Try CUDA_PATH environment variable if defined
+    var env_buf: [512]u8 = undefined;
+    const cuda_path_len = GetEnvironmentVariableA("CUDA_PATH", &env_buf, env_buf.len);
+    if (cuda_path_len > 0 and cuda_path_len < env_buf.len) {
+        const cuda_path = env_buf[0..cuda_path_len];
+        var candidate: [768:0]u8 = undefined;
+        const sep = if (cuda_path[cuda_path.len - 1] == '\\') "" else "\\";
+        if (std.fmt.bufPrintZ(&candidate, "{s}{s}bin\\{s}", .{ cuda_path, sep, dll_name })) |joined| {
+            if (platformOpen(joined)) |h| return h;
+        } else |_| {}
+    }
+
+    // 3. Dynamically check standard environment variables set by CUDA Toolkit installers (CUDA_PATH_V13_4, CUDA_PATH_V12_0, etc.)
+    for (cuda_major_versions) |maj| {
+        for (cuda_minor_versions) |min| {
+            var var_name_buf: [64:0]u8 = undefined;
+            const var_name = std.fmt.bufPrintZ(&var_name_buf, "CUDA_PATH_V{s}_{s}", .{ maj, min }) catch continue;
+            const len = GetEnvironmentVariableA(var_name.ptr, &env_buf, env_buf.len);
+            if (len > 0 and len < env_buf.len) {
+                const path_val = env_buf[0..len];
+                var candidate: [768:0]u8 = undefined;
+                const sep = if (path_val[path_val.len - 1] == '\\') "" else "\\";
+                if (std.fmt.bufPrintZ(&candidate, "{s}{s}bin\\{s}", .{ path_val, sep, dll_name })) |joined| {
+                    if (platformOpen(joined)) |h| return h;
+                } else |_| {}
+            }
+        }
+    }
+
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Library name lists
 // ---------------------------------------------------------------------------
+// Central Comptime Version Generator for CUDA Runtime & NVRTC Libraries
+// ---------------------------------------------------------------------------
+
+const cuda_major_versions = [_][]const u8{ "13", "12", "11" };
+const cuda_minor_versions = [_][]const u8{ "9", "8", "7", "6", "5", "4", "3", "2", "1", "0" };
+
+/// Comptime helper to generate runtime library probe names for the active OS/Arch.
+fn buildRuntimeLibNames() []const []const u8 {
+    comptime {
+        return switch (builtin.os.tag) {
+            .windows => switch (builtin.cpu.arch) {
+                .x86 => generateWindowsNames("cudart32_", ".dll", false),
+                else => generateWindowsNames("cudart64_", ".dll", false),
+            },
+            .linux => generateLinuxNames("libcudart.so.", "libcudart.so"),
+            .macos => &.{},
+            else => &.{"libcudart.so"},
+        };
+    }
+}
+
+/// Comptime helper to generate NVRTC library probe names for the active OS/Arch.
+fn buildNvrtcLibNames() []const []const u8 {
+    comptime {
+        return switch (builtin.os.tag) {
+            .windows => switch (builtin.cpu.arch) {
+                .x86 => generateWindowsNames("nvrtc32_", ".dll", true),
+                else => generateWindowsNames("nvrtc64_", ".dll", true),
+            },
+            .linux => generateLinuxNames("libnvrtc.so.", "libnvrtc.so"),
+            .macos => &.{},
+            else => &.{"libnvrtc.so"},
+        };
+    }
+}
+
+fn generateWindowsNames(comptime prefix: []const u8, comptime ext: []const u8, comptime is_nvrtc: bool) []const []const u8 {
+    comptime {
+        var names: []const []const u8 = &.{};
+        for (cuda_major_versions) |maj| {
+            for (cuda_minor_versions) |min| {
+                if (is_nvrtc) {
+                    // Windows NVRTC version format: nvrtc64_134_0.dll, nvrtc64_120_0.dll
+                    const name = prefix ++ maj ++ min ++ "_0" ++ ext;
+                    names = names ++ [_][]const u8{name};
+                } else {
+                    // Windows CUDA Runtime format: cudart64_134.dll, cudart64_120.dll
+                    const name = prefix ++ maj ++ min ++ ext;
+                    names = names ++ [_][]const u8{name};
+                }
+            }
+            // Major-only symlink format (e.g. cudart64_12.dll or nvrtc64_12.dll)
+            const maj_name = if (is_nvrtc) prefix ++ maj ++ "_0" ++ ext else prefix ++ maj ++ ext;
+            names = names ++ [_][]const u8{maj_name};
+        }
+        return names;
+    }
+}
+
+fn generateLinuxNames(comptime prefix: []const u8, comptime unversioned: []const u8) []const []const u8 {
+    comptime {
+        var names: []const []const u8 = &.{};
+        for (cuda_major_versions) |maj| {
+            for (cuda_minor_versions) |min| {
+                const full_ver_name = prefix ++ maj ++ "." ++ min;
+                names = names ++ [_][]const u8{full_ver_name};
+            }
+            const maj_name = prefix ++ maj;
+            names = names ++ [_][]const u8{maj_name};
+        }
+        names = names ++ [_][]const u8{unversioned};
+        return names;
+    }
+}
 
 const driver_lib_names: []const []const u8 = switch (builtin.os.tag) {
     .windows => &.{"nvcuda.dll"},
     .linux => &.{ "libcuda.so.1", "libcuda.so" },
-    .macos => &.{}, // Native CUDA unsupported on modern macOS
+    .macos => &.{},
     else => &.{"libcuda.so"},
 };
 
-/// Runtime DLL names — probed newest-first so CUDA 13.3 is tried before 13.2.
-const runtime_lib_names: []const []const u8 = switch (builtin.os.tag) {
-    .windows => &.{
-        "cudart64_133.dll",
-        "cudart64_132.dll",
-        "cudart64_131.dll",
-        "cudart64_130.dll",
-        "cudart64_129.dll",
-        "cudart64_128.dll",
-        "cudart64_127.dll",
-        "cudart64_126.dll",
-        "cudart64_125.dll",
-        "cudart64_124.dll",
-        "cudart64_123.dll",
-        "cudart64_122.dll",
-        "cudart64_121.dll",
-        "cudart64_120.dll",
-        "cudart64_12.dll",
-        "cudart64_110.dll",
-        "cudart64.dll",
-        "cudart.dll",
-    },
-    .linux => &.{ "libcudart.so.13", "libcudart.so.12", "libcudart.so.11.0", "libcudart.so" },
-    .macos => &.{}, // Native CUDA unsupported on modern macOS
-    else => &.{"libcudart.so"},
-};
-
-const nvrtc_lib_names: []const []const u8 = switch (builtin.os.tag) {
-    .windows => &.{
-        "nvrtc64_133_0.dll",
-        "nvrtc64_132_0.dll",
-        "nvrtc64_131_0.dll",
-        "nvrtc64_130_0.dll",
-        "nvrtc64_120_0.dll",
-        "nvrtc64_12.dll",
-        "nvrtc64_112_0.dll",
-        "nvrtc64.dll",
-        "nvrtc.dll",
-    },
-    .linux => &.{ "libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so" },
-    .macos => &.{}, // Native CUDA unsupported on modern macOS
-    else => &.{"libnvrtc.so"},
-};
+const runtime_lib_names: []const []const u8 = buildRuntimeLibNames();
+const nvrtc_lib_names: []const []const u8 = buildNvrtcLibNames();
 
 // ---------------------------------------------------------------------------
 // Loader struct
@@ -193,7 +273,7 @@ pub const Loader = struct {
         }
 
         for (runtime_lib_names) |name| {
-            if (platformOpen(name)) |h| {
+            if (openWithCudaPath(name)) |h| {
                 ldr.runtime_handle = h;
                 ldr.runtime_available = true;
                 break;
@@ -201,7 +281,7 @@ pub const Loader = struct {
         }
 
         for (nvrtc_lib_names) |name| {
-            if (platformOpen(name)) |h| {
+            if (openWithCudaPath(name)) |h| {
                 ldr.nvrtc_handle = h;
                 ldr.nvrtc_available = true;
                 break;

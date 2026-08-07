@@ -24,3 +24,5 @@ zig build example-02   # memory transfer
 | [07](/examples/07-cpu-fallback) | CPU Fallback | Run on host without a GPU |
 | [08](/examples/08-managed-memory) | Managed Memory | Unified Memory, prefetch, advise |
 | [09](/examples/09-nvrtc-compilation) | NVRTC Compilation | Runtime PTX compilation and launch |
+| [10](/examples/10-memory-pools-pitched) | Memory Pools & 2D Pitched | Stream-ordered pool allocations & 2D pitched memory |
+| [11](/examples/11-occupancy-profiler) | Occupancy & Profiler | Occupancy calculator, stream priority & profiler markers |

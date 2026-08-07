@@ -175,7 +175,7 @@ export default defineConfig({
         programmingLanguage: "Zig",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         downloadUrl: "https://github.com/muhammad-fiaz/cuda.zig",
-        softwareVersion: "0.0.1",
+        softwareVersion: "0.0.2",
         license: "https://opensource.org/licenses/MIT",
       });
     } else {
@@ -294,6 +294,8 @@ export default defineConfig({
             { text: "07 — CPU Fallback", link: "/examples/07-cpu-fallback" },
             { text: "08 — Managed Memory", link: "/examples/08-managed-memory" },
             { text: "09 — NVRTC Compilation", link: "/examples/09-nvrtc-compilation" },
+            { text: "10 — Memory Pools & 2D Pitched", link: "/examples/10-memory-pools-pitched" },
+            { text: "11 — Occupancy & Profiler", link: "/examples/11-occupancy-profiler" },
           ],
         },
       ],

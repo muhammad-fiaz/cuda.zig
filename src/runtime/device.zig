@@ -181,3 +181,79 @@ test "getDeviceCount without CUDA" {
     // Count may be 0 on a headless CI machine.
     _ = count;
 }
+
+// Peer (P2P) Access
+
+/// Returns `true` if `device` can directly access memory on `peer_device`.
+///
+/// Both devices must be in the same CUDA context group. On most systems,
+/// two RTX/Quadro GPUs on the same PCIe root complex support P2P access.
+/// Call `enablePeerAccess` before using P2P `cudaMemcpy` or unified memory
+/// across devices.
+pub fn canAccessPeer(device: u32, peer_device: u32) err.CudaError!bool {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.DeviceCanAccessPeerFn, "cudaDeviceCanAccessPeer")) |f| {
+        var can: c_int = 0;
+        try result.checkRuntime(f(&can, @intCast(device), @intCast(peer_device)));
+        return can != 0;
+    }
+    if (ldr.getDriverSymbol(*const fn (*c_int, c_int, c_int) callconv(.c) c_int, "cuDeviceCanAccessPeer")) |f| {
+        var can: c_int = 0;
+        try result.checkDriver(f(&can, @intCast(device), @intCast(peer_device)));
+        return can != 0;
+    }
+    return false;
+}
+
+/// Enables direct access from the current device to `peer_device`'s memory.
+///
+/// Must be called from the thread that owns the context on the **source**
+/// device (i.e., after `setDevice(source)`). `flags` must be `0` (reserved).
+/// Call `disablePeerAccess` when done to release hardware resources.
+pub fn enablePeerAccess(peer_device: u32, flags: c_uint) err.CudaError!void {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.DeviceEnablePeerAccessFn, "cudaDeviceEnablePeerAccess")) |f| {
+        try result.checkRuntime(f(@intCast(peer_device), flags));
+        return;
+    }
+    if (ldr.getDriverSymbol(*const fn (?*anyopaque, c_uint) callconv(.c) c_int, "cuCtxEnablePeerAccess")) |f| {
+        // Driver API takes a context handle; we use null (current context).
+        try result.checkDriver(f(null, flags));
+        return;
+    }
+    return error.NotInitialized;
+}
+
+/// Disables direct access from the current device to `peer_device`'s memory.
+pub fn disablePeerAccess(peer_device: u32) err.CudaError!void {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.DeviceDisablePeerAccessFn, "cudaDeviceDisablePeerAccess")) |f| {
+        try result.checkRuntime(f(@intCast(peer_device)));
+        return;
+    }
+    return error.NotInitialized;
+}
+
+// Raw Device Attribute Query
+
+/// Queries a single device attribute by its CUDA enum integer value.
+///
+/// This is the lowest-level escape hatch: if `DeviceProperties` is missing
+/// an attribute you need, call `getAttribute` with the appropriate
+/// `CU_DEVICE_ATTRIBUTE_*` constant. Returns `0` if the attribute is
+/// unavailable or the driver is absent.
+pub fn getAttribute(attribute: c_int, device: u32) i32 {
+    const ldr = loader.globalLoader();
+    if (ldr.getDriverSymbol(*const fn (*c_int, c_int, c_int) callconv(.c) c_int, "cuDeviceGetAttribute")) |f| {
+        var val: c_int = 0;
+        _ = f(&val, attribute, @intCast(device));
+        return @intCast(val);
+    }
+    return 0;
+}
+
+test "peer access compiles" {
+    _ = canAccessPeer;
+    _ = enablePeerAccess;
+    _ = disablePeerAccess;
+}

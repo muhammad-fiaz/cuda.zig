@@ -107,8 +107,61 @@ pub fn streamWaitEvent(stream: ffi.Stream, event: ffi.Event, flags: c_uint) err.
     try result.checkRuntime(f(stream, event, flags));
 }
 
+// Stream Priority APIs
+
+/// Returns the priority of `stream`.
+///
+/// A lower integer means higher priority. The default stream has priority 0.
+/// Priorities are device-specific; query the valid range with
+/// `getStreamPriorityRange`.
+pub fn getStreamPriority(stream: ffi.Stream) err.CudaError!i32 {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.StreamGetPriorityFn, "cudaStreamGetPriority") orelse
+        return error.NotInitialized;
+    var priority: c_int = 0;
+    try result.checkRuntime(f(stream, &priority));
+    return @intCast(priority);
+}
+
+/// Creates a stream with the given `flags` and integer `priority`.
+///
+/// Lower integers represent higher priority. Use `getStreamPriorityRange` to
+/// discover the valid range. Values outside the range are clamped by the
+/// driver. Use `ffi.StreamFlags.non_blocking` to create a non-blocking stream.
+pub fn createStreamWithPriority(flags: c_uint, priority: i32) err.CudaError!ffi.Stream {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.StreamCreateWithPriorityFn, "cudaStreamCreateWithPriority")) |f| {
+        var stream: ffi.Stream = null;
+        try result.checkRuntime(f(&stream, flags, @intCast(priority)));
+        return stream;
+    }
+    // Fallback: create a stream without priority (priority arg is advisory).
+    return createStreamWithFlags(flags);
+}
+
+/// Returns the least and greatest numerical priority values for streams.
+///
+/// A lower integer means higher priority. On most devices the range is
+/// `[-1, 0]` (one high-priority level) or `[-2, 0]` (two levels).
+pub fn getStreamPriorityRange() err.CudaError!struct { least: i32, greatest: i32 } {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.DeviceGetStreamPriorityRangeFn, "cudaDeviceGetStreamPriorityRange") orelse
+        return .{ .least = 0, .greatest = 0 };
+    var least: c_int = 0;
+    var greatest: c_int = 0;
+    try result.checkRuntime(f(&least, &greatest));
+    return .{ .least = @intCast(least), .greatest = @intCast(greatest) };
+}
+
 test "stream create/destroy skips without CUDA" {
     if (!loader.isAvailable()) return error.SkipZigTest;
     const s = try createStream();
     try destroyStream(s);
+}
+
+test "stream priority range" {
+    if (!loader.isAvailable()) return error.SkipZigTest;
+    const range = try getStreamPriorityRange();
+    // Least priority >= greatest priority (least = most negative)
+    _ = range;
 }

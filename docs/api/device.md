@@ -1,75 +1,58 @@
 ---
-title: Device API
-description: CUDA device enumeration, property queries, selection, and reset in cuda.zig.
+title: Device API Documentation
+description: Reference for Device, DeviceProperties, peer access (P2P), and device management in cuda.zig.
 ---
 
-# Device API
+# Device API Reference
 
-## `cuda.device`
+The `cuda.device` namespace provides GPU device enumeration, property queries, selection, and peer-to-peer (P2P) memory access.
 
-```zig
-/// Return the number of CUDA-capable devices on this host.
-/// Returns 0 in CPU-fallback mode.
-pub fn count() !u32
-
-/// Set the active device for the calling thread.
-pub fn set(index: u32) !void
-
-/// Return the index of the currently active device.
-pub fn current() !u32
-
-/// Reset the current device, destroying all resources.
-/// Equivalent to cudaDeviceReset(). Use only at shutdown.
-pub fn reset() !void
-```
-
-## `cuda.Device`
+## Device Management
 
 ```zig
-pub const Device = struct {
-    index: u32,
-
-    /// Select a device by index and set it as current.
-    pub fn select(index: u32) !Device
-
-    /// Return the device name string (null-terminated, max 256 bytes).
-    pub fn name(self: Device) []const u8
-
-    /// Return the full cudaDeviceProp structure for this device.
-    pub fn properties(self: Device) !DeviceProperties
-};
+const count = try cuda.deviceCount();
+try cuda.setDevice(0);
+const current = try cuda.currentDevice();
+try cuda.synchronize();
 ```
 
-## `DeviceProperties`
-
-Direct mapping of `cudaDeviceProp`. Key fields:
-
-| Field | Type | Description |
-|---|---|---|
-| `name` | `[256]u8` | Device name |
-| `totalGlobalMem` | `usize` | Total VRAM in bytes |
-| `sharedMemPerBlock` | `usize` | Max shared memory per block |
-| `regsPerBlock` | `i32` | Max 32-bit registers per block |
-| `warpSize` | `i32` | Warp size in threads |
-| `maxThreadsPerBlock` | `i32` | Max threads per block |
-| `maxGridSize` | `[3]i32` | Max grid dimensions |
-| `clockRate` | `i32` | Clock frequency in kHz |
-| `multiProcessorCount` | `i32` | Number of SMs |
-| `major` / `minor` | `i32` | Compute capability |
-| `totalConstMem` | `usize` | Constant memory size |
-| `l2CacheSize` | `i32` | L2 cache size in bytes |
-| `maxThreadsPerMultiProcessor` | `i32` | Max threads per SM |
-| `isMultiGpuBoard` | `i32` | Non-zero if NVLink present |
-
-## Peer Access
+## `Device` Struct
 
 ```zig
-/// Check if device `src` can directly access memory on device `dst`.
-pub fn canAccess(src: u32, dst: u32) !bool
+const dev = try cuda.Device.init(0);
 
-/// Enable peer access from the current device to `target`.
-pub fn enable(target: u32) !void
-
-/// Disable peer access from the current device to `target`.
-pub fn disable(target: u32) !void
+const name = try dev.name();
+const cap = try dev.computeCapability();
+const total_mem = try dev.totalMemory();
+const free_mem = try dev.freeMemory();
+const props = try dev.propertiesRaw();
 ```
+
+### Peer-to-Peer Access (P2P)
+
+```zig
+if (try cuda.runtime.device.canAccessPeer(0, 1)) {
+    try cuda.setDevice(0);
+    try cuda.runtime.device.enablePeerAccess(1, 0);
+    // Direct cross-GPU memory transfers are now enabled
+}
+```
+
+### Device Functions
+
+| Function | Description |
+|----------|-------------|
+| `cuda.deviceCount()` | Number of visible CUDA GPUs |
+| `cuda.setDevice(index)` | Set active device for current thread |
+| `cuda.currentDevice()` | Get active device index |
+| `cuda.synchronize()` | Synchronize current device context |
+| `cuda.allDevices(allocator)` | Return array of all `Device` handles |
+| `dev.name()` | Device name string |
+| `dev.computeCapability()` | `{ major, minor }` capability struct |
+| `dev.totalMemory()` | Total VRAM in bytes |
+| `dev.freeMemory()` | Free VRAM in bytes |
+| `dev.propertiesRaw()` | Full `DeviceProperties` struct |
+| `canAccessPeer(dev, peer)` | Check P2P support between GPUs |
+| `enablePeerAccess(peer, flags)` | Enable P2P access to peer GPU |
+| `disablePeerAccess(peer)` | Disable P2P access to peer GPU |
+| `getAttribute(attr, dev)` | Raw `cuDeviceGetAttribute` query |

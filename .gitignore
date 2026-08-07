@@ -5,6 +5,8 @@ zig-cache/
 *.o
 *.obj
 *.ptx
+*.exe
+*.pdb
 
 # VitePress & Node build artifacts
 docs/.vitepress/dist/

@@ -1,29 +1,22 @@
 ---
-title: API Reference
-description: Complete API reference for all cuda.zig public modules.
+title: API Overview
+description: Index of all modules, abstractions, and FFI layers provided by cuda.zig.
 ---
 
-# API Reference
+# API Overview
 
-This section provides a complete reference for every public API exported by cuda.zig.
+`cuda.zig` provides a layered architecture: high-level typed abstractions built on top of low-level runtime and driver bindings, all resolving dynamically with zero link-time dependencies.
 
-## Modules
+## Top-Level Namespaces
 
 | Module | Description |
-|---|---|
-| [Core](/api/core) | Initialisation, error types, dynamic loader, version queries |
-| [Device](/api/device) | Device enumeration, properties, selection, reset |
-| [Memory](/api/memory) | Device, host-pinned, managed memory, and CudaAllocator |
-| [Stream & Event](/api/stream) | Async streams, events, synchronisation, timing |
-| [Kernel](/api/kernel) | Module loading, function lookup, kernel launch, CUDA Graphs |
-| [Tensor](/api/tensor) | High-level Tensor(T): elementwise, reduction, matmul |
-| [NVRTC](/api/nvrtc) | Runtime PTX compilation |
-| [Fallback](/api/fallback) | CPU fallback backend and dispatch layer |
-
-## Import
-
-```zig
-const cuda = @import("cuda");
-```
-
-All APIs described in this reference are accessible through the top-level `cuda` namespace or through sub-namespaces as shown in each page.
+|--------|-------------|
+| [`cuda.device`](/api/device) | GPU enumeration, properties, selection, and P2P peer access |
+| [`cuda.memory`](/api/memory) | Typed buffers (`DeviceBuffer`, `PinnedBuffer`, `UnifiedBuffer`, `PoolBuffer`) and raw allocators |
+| [`cuda.stream`](/api/stream) | Asynchronous execution streams, priorities, and events |
+| [`cuda.kernel`](/api/kernel) | Driver kernel launch, `LaunchConfig`, modules, and `cuda.occupancy` |
+| [`cuda.tensor`](/api/tensor) | High-level `Tensor(T)` with cuBLAS & CPU fallback matrix operations |
+| [`cuda.nvrtc`](/api/nvrtc) | Runtime CUDA C++ compilation to PTX via NVRTC |
+| [`cuda.fallback`](/api/fallback) | Automatic CPU fallback execution engine |
+| [`cuda.profiler`](/api/core) | Profiler session markers (`start`, `stop`, `ProfilerGuard`) |
+| [`cuda.version`](/api/core) | Driver & Runtime version detection and capability flags |

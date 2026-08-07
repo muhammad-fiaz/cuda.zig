@@ -55,6 +55,8 @@
 - For **data validation and serialization** support, check out **[zigantic](https://github.com/muhammad-fiaz/zigantic)**.
 - For **build tooling** support, check out **[buildx.zig](https://github.com/muhammad-fiaz/buildx.zig)**.
 - For **CUDA/GPU computing** support, check out **[cuda.zig](https://github.com/muhammad-fiaz/cuda.zig)**.
+- For **Sqlite** support, check out **[sqlite.zig](https://github.com/muhammad-fiaz/sqlite.zig)**.
+- For **Simplified Build.zig** support, check out **[build.zig](https://github.com/muhammad-fiaz/buildx.zig)**.
 
 ---
 
@@ -64,14 +66,17 @@
 | Feature | Description |
 |---------|-------------|
 | **Dynamic Library Loader** | Runtime resolution of CUDA Driver (`nvcuda.dll` / `libcuda.so`), Runtime (`cudart`), and NVRTC with zero link-time dependencies. |
-| **Toolkit Version Compatibility** | Native support for CUDA 12.0 through 13.3 Update 1 with automatic ABI detection. |
+| **Toolkit Version Compatibility** | Native support for CUDA 12.0 through 13.4 Developer Preview with automatic ABI detection. |
 | **Transparent CPU Fallback** | Automatic fallback to pure Zig CPU implementations for memory allocations and tensor operations when no CUDA GPU is detected. |
 | **Device Selection & Properties** | Enumeration of all visible CUDA devices, compute capability queries, memory size reporting, and threadlocal device context management. |
-| **Typed Memory Buffers** | High-level `DeviceBuffer(T)`, `PinnedBuffer(T)` (page-locked DMA host memory), and `UnifiedBuffer(T)` (managed memory with prefetch/advise). |
+| **Typed Memory Buffers** | High-level `DeviceBuffer(T)`, `PinnedBuffer(T)` (page-locked DMA host memory), `UnifiedBuffer(T)` (managed memory with prefetch/advise), and `PoolBuffer(T)` (stream-ordered memory pools). |
+| **Pitched & 2-D Memory** | Hardware-optimal 2-D pitched allocation (`mallocPitch`) and 2-D transfers (`memcpy2D`). |
 | **Synchronous & Asynchronous Copies** | Typed H2D, D2H, and D2D memory transfers (sync and stream-ordered async). |
-| **Streams & Events** | High-level wrappers for `Stream` and `Event` with elapsed time calculation and stream synchronization. |
+| **Streams & Events** | High-level wrappers for `Stream` and `Event` with stream priority ranges (`getStreamPriorityRange`) and elapsed time calculation. |
 | **Kernel Launch & Modules** | Arbitrary POD argument marshaling for kernel launches, module loading (`PTX` / `cubin`), and `Function` lookup. |
+| **Occupancy Calculator** | Calculate optimal SM block utilization with `maxActiveBlocksPerMultiprocessor` and `maxPotentialBlockSize`. |
 | **NVRTC Compilation** | Runtime compilation of CUDA C++ source strings to PTX assembly. |
+| **Profiler Integration** | Scoped session tracking via `profiler.start()`, `profiler.stop()`, and `ProfilerGuard`. |
 | **Multi-GPU & Peer Access** | `canAccessPeer`, `enablePeerAccess`, `disablePeerAccess`, and cross-device transfers. |
 | **Tensor Abstraction** | Generic `Tensor(T)` struct supporting shape manipulation, elementwise ops (add, sub, mul, div, relu), reductions (sum, mean), and matrix multiplication. |
 | **CudaAllocator** | `std.mem.Allocator` vtable implementation backed by GPU global device memory. |
@@ -251,7 +256,7 @@ pub fn main() !void {
 
 ## Examples
 
-The `examples/` directory contains **9 runnable examples**:
+The `examples/` directory contains **12 runnable examples**:
 
 - [`01_device_info`](examples/01_device_info.zig) - Device enumeration, compute capability, and memory specs
 - [`02_memory_transfer`](examples/02_memory_transfer.zig) - Host-to-Device and Device-to-Host transfers
@@ -262,6 +267,9 @@ The `examples/` directory contains **9 runnable examples**:
 - [`07_cpu_fallback`](examples/07_cpu_fallback.zig) - Demonstrating automatic CPU fallback execution
 - [`08_managed_memory`](examples/08_managed_memory.zig) - Advanced Unified Memory allocations, prefetching, and advice
 - [`09_nvrtc_compilation`](examples/09_nvrtc_compilation.zig) - Dynamic CUDA C++ source compilation to PTX via NVRTC
+- [`10_memory_pools_pitched`](examples/10_memory_pools_pitched.zig) - Stream-ordered memory pool allocations and 2D pitched memory
+- [`11_occupancy_profiler`](examples/11_occupancy_profiler.zig) - Kernel occupancy calculations, stream priorities, and profiler markers
+- [`12_benchmark_matrix_ops`](examples/12_benchmark_matrix_ops.zig) - Parallel N-Body compute benchmark comparing Single-Threaded CPU vs CUDA GPU
 
 To run any example:
 ```bash
@@ -274,6 +282,9 @@ zig build example-multi-gpu
 zig build example-cpu-fallback
 zig build example-managed-memory
 zig build example-nvrtc-compilation
+zig build example-memory-pools-pitched
+zig build example-occupancy-profiler
+zig build example-benchmark-matrix-ops
 ```
 
 ## Validation & Testing

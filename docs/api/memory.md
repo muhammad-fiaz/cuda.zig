@@ -1,122 +1,66 @@
 ---
-title: Memory API
-description: Device memory, host-pinned memory, managed memory, transfer helpers, and CudaAllocator in cuda.zig.
+title: Memory API Documentation
+description: Reference for DeviceBuffer, PinnedBuffer, UnifiedBuffer, PoolBuffer, and memory management in cuda.zig.
 ---
 
-# Memory API
+# Memory API Reference
 
-## `cuda.DeviceBuffer(T)`
+The `cuda.memory` namespace provides typed and raw memory management across GPU global memory, host pinned memory, unified/managed memory, and stream-ordered memory pools.
 
-```zig
-pub fn DeviceBuffer(comptime T: type) type {
-    return struct {
-        /// Allocate `len` elements in device memory.
-        pub fn init(allocator: std.mem.Allocator, len: usize) !@This()
+## Types & Modules
 
-        /// Free device memory.
-        pub fn deinit(self: *@This()) void
-
-        /// Return the raw device pointer (CUdeviceptr).
-        pub fn devicePtr(self: @This()) CUdeviceptr
-
-        /// Return the element count.
-        pub fn len(self: @This()) usize
-
-        /// Fill all bytes with `value`.
-        pub fn memset(self: @This(), value: u8) !void
-
-        /// Synchronous host → device copy.
-        pub fn copyFromHost(self: @This(), src: []const T) !void
-
-        /// Synchronous device → host copy.
-        pub fn copyToHost(self: @This(), dst: []T) !void
-
-        /// Asynchronous host → device copy.
-        pub fn copyFromHostAsync(self: @This(), src: []const T, stream: Stream) !void
-
-        /// Asynchronous device → host copy.
-        pub fn copyToHostAsync(self: @This(), dst: []T, stream: Stream) !void
-
-        /// Device → device copy (same device).
-        pub fn copyFromDevice(self: @This(), src: @This()) !void
-    };
-}
-```
-
-## `cuda.HostBuffer(T)`
+### `DeviceBuffer(T)`
+Typed wrapper for CUDA device-side allocations (`cudaMalloc`/`cudaFree`).
 
 ```zig
-pub fn HostBuffer(comptime T: type) type {
-    return struct {
-        /// Allocate `len` elements in page-locked host memory (cudaHostAlloc).
-        pub fn init(allocator: std.mem.Allocator, len: usize) !@This()
-        pub fn deinit(self: *@This()) void
+var buf = try cuda.DeviceBuffer(f32).alloc(1024);
+defer buf.deinit();
 
-        /// Access the host-side slice directly.
-        pub fn slice(self: @This()) []T
-
-        /// Raw pinned pointer (for passing to cudaMemcpyAsync).
-        pub fn ptr(self: @This()) *T
-    };
-}
+try buf.copyFromHost(&host_slice);
+try buf.copyToHost(&out_slice);
 ```
 
-## `cuda.ManagedBuffer(T)`
+### `PinnedBuffer(T)`
+Host memory allocated in page-locked (pinned) RAM for maximum transfer bandwidth (`cudaHostAlloc`/`cudaFreeHost`).
 
 ```zig
-pub fn ManagedBuffer(comptime T: type) type {
-    return struct {
-        /// Allocate `len` elements in unified memory (cudaMallocManaged).
-        pub fn init(allocator: std.mem.Allocator, len: usize) !@This()
-        pub fn deinit(self: *@This()) void
-
-        /// Access as a host-side slice (caution: synchronise first).
-        pub fn slice(self: @This()) []T
-
-        /// Prefetch data to the specified device (cudaMemPrefetchAsync).
-        pub fn prefetchToDevice(self: @This(), device: u32, stream: Stream) !void
-
-        /// Prefetch data back to CPU (device = cudaCpuDeviceId).
-        pub fn prefetchToHost(self: @This(), stream: Stream) !void
-
-        /// Set memory access advice (cudaMemAdvise).
-        pub fn advise(self: @This(), advice: MemAdvise, device: u32) !void
-    };
-}
+var pinned = try cuda.PinnedBuffer(f32).alloc(1024);
+defer pinned.deinit();
 ```
 
-### `MemAdvise`
+### `UnifiedBuffer(T)`
+Managed memory accessible from both CPU and GPU transparently (`cudaMallocManaged`).
 
 ```zig
-pub const MemAdvise = enum {
-    SetReadMostly,
-    UnsetReadMostly,
-    PreferredLocation,
-    UnsetPreferredLocation,
-    AccessedBy,
-    UnsetAccessedBy,
-};
+var unif = try cuda.UnifiedBuffer(f32).alloc(1024);
+defer unif.deinit();
+
+try unif.prefetchToDevice(0, stream);
+try unif.prefetchToHost(stream);
 ```
 
-## `cuda.memory` — Transfer Helpers
+### `PoolBuffer(T)`
+Stream-ordered allocation backed by CUDA memory pools (`cudaMallocAsync`/`cudaFreeAsync`).
 
 ```zig
-/// Peer-to-peer device copy.
-pub fn copyPeer(
-    dst: CUdeviceptr, dst_device: u32,
-    src: CUdeviceptr, src_device: u32,
-    bytes: usize,
-) !void
+var pool_buf = try cuda.PoolBuffer(f32).alloc(1024, stream);
+defer pool_buf.freeOnStream(stream) catch {};
 ```
 
-## `cuda.CudaAllocator`
+## Low-Level Memory Functions (`cuda.runtime.memory`)
 
-```zig
-pub const CudaAllocator = struct {
-    /// Create a CudaAllocator backed by cudaMalloc / cudaFree.
-    pub fn init() CudaAllocator
-
-    /// Return a std.mem.Allocator interface.
-    pub fn allocator(self: *CudaAllocator) std.mem.Allocator
-};
-```
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `allocDevice` | `(size: usize) !*anyopaque` | Allocate raw device memory |
+| `freeDevice` | `(ptr: *anyopaque) void` | Release device memory |
+| `allocHost` | `(size: usize, flags: c_uint) !*anyopaque` | Allocate pinned host memory |
+| `freeHost` | `(ptr: *anyopaque) void` | Release pinned host memory |
+| `allocManaged` | `(size: usize, flags: c_uint) !*anyopaque` | Allocate unified memory |
+| `allocAsync` | `(size: usize, stream: Stream) !*anyopaque` | Stream-ordered pool allocation |
+| `freeAsync` | `(ptr: *anyopaque, stream: Stream) !void` | Stream-ordered pool deallocation |
+| `mallocPitch` | `(width: usize, height: usize) !{ ptr, pitch }` | 2-D pitched allocation |
+| `memcpy2D` | `(...) !void` | Synchronous 2-D copy |
+| `memcpy2DAsync` | `(...) !void` | Asynchronous 2-D copy on stream |
+| `ipcGetMemHandle` | `(ptr: *anyopaque) !IpcMemHandle` | Export allocation as IPC handle |
+| `ipcOpenMemHandle` | `(handle: IpcMemHandle, flags) !*anyopaque` | Import IPC handle |
+| `ipcCloseMemHandle` | `(ptr: *anyopaque) !void` | Close imported IPC handle |
