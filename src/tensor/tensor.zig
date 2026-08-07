@@ -168,7 +168,10 @@ pub fn Tensor(comptime T: type) type {
                 new_dims[out_ndim] = self.shape.dims[i];
                 out_ndim += 1;
             }
-            if (out_ndim == 0) { new_dims[0] = 1; out_ndim = 1; }
+            if (out_ndim == 0) {
+                new_dims[0] = 1;
+                out_ndim = 1;
+            }
             return self.reshape(new_dims[0..out_ndim]);
         }
 
@@ -185,7 +188,7 @@ pub fn Tensor(comptime T: type) type {
                     j += 1;
                 }
             }
-            return self.reshape(new_dims[0..self.shape.ndim + 1]);
+            return self.reshape(new_dims[0 .. self.shape.ndim + 1]);
         }
 
         /// Permute axes. `perm[i]` is the source axis for output axis `i`.
@@ -222,9 +225,12 @@ pub fn Tensor(comptime T: type) type {
         pub fn add(self: Self, other: Self) !Self {
             if (!self.shape.eq(other.shape)) return error.InvalidValue;
             const total = self.numel();
-            const a = try self.hostBuf(); defer std.heap.page_allocator.free(a);
-            const b = try other.hostBuf(); defer std.heap.page_allocator.free(b);
-            const r = try std.heap.page_allocator.alloc(T, total); defer std.heap.page_allocator.free(r);
+            const a = try self.hostBuf();
+            defer std.heap.page_allocator.free(a);
+            const b = try other.hostBuf();
+            defer std.heap.page_allocator.free(b);
+            const r = try std.heap.page_allocator.alloc(T, total);
+            defer std.heap.page_allocator.free(r);
             try elem_ops.add(T, r, a, b);
             return fromSlice(r, self.shape.dims[0..self.shape.ndim]);
         }
@@ -233,9 +239,12 @@ pub fn Tensor(comptime T: type) type {
         pub fn sub(self: Self, other: Self) !Self {
             if (!self.shape.eq(other.shape)) return error.InvalidValue;
             const total = self.numel();
-            const a = try self.hostBuf(); defer std.heap.page_allocator.free(a);
-            const b = try other.hostBuf(); defer std.heap.page_allocator.free(b);
-            const r = try std.heap.page_allocator.alloc(T, total); defer std.heap.page_allocator.free(r);
+            const a = try self.hostBuf();
+            defer std.heap.page_allocator.free(a);
+            const b = try other.hostBuf();
+            defer std.heap.page_allocator.free(b);
+            const r = try std.heap.page_allocator.alloc(T, total);
+            defer std.heap.page_allocator.free(r);
             try elem_ops.sub(T, r, a, b);
             return fromSlice(r, self.shape.dims[0..self.shape.ndim]);
         }
@@ -244,9 +253,12 @@ pub fn Tensor(comptime T: type) type {
         pub fn mul(self: Self, other: Self) !Self {
             if (!self.shape.eq(other.shape)) return error.InvalidValue;
             const total = self.numel();
-            const a = try self.hostBuf(); defer std.heap.page_allocator.free(a);
-            const b = try other.hostBuf(); defer std.heap.page_allocator.free(b);
-            const r = try std.heap.page_allocator.alloc(T, total); defer std.heap.page_allocator.free(r);
+            const a = try self.hostBuf();
+            defer std.heap.page_allocator.free(a);
+            const b = try other.hostBuf();
+            defer std.heap.page_allocator.free(b);
+            const r = try std.heap.page_allocator.alloc(T, total);
+            defer std.heap.page_allocator.free(r);
             try elem_ops.mul(T, r, a, b);
             return fromSlice(r, self.shape.dims[0..self.shape.ndim]);
         }
@@ -255,32 +267,40 @@ pub fn Tensor(comptime T: type) type {
         pub fn div(self: Self, other: Self) !Self {
             if (!self.shape.eq(other.shape)) return error.InvalidValue;
             const total = self.numel();
-            const a = try self.hostBuf(); defer std.heap.page_allocator.free(a);
-            const b = try other.hostBuf(); defer std.heap.page_allocator.free(b);
-            const r = try std.heap.page_allocator.alloc(T, total); defer std.heap.page_allocator.free(r);
+            const a = try self.hostBuf();
+            defer std.heap.page_allocator.free(a);
+            const b = try other.hostBuf();
+            defer std.heap.page_allocator.free(b);
+            const r = try std.heap.page_allocator.alloc(T, total);
+            defer std.heap.page_allocator.free(r);
             try elem_ops.div(T, r, a, b);
             return fromSlice(r, self.shape.dims[0..self.shape.ndim]);
         }
 
         /// Element-wise ReLU: max(0, x). Returns new tensor.
         pub fn relu(self: Self) !Self {
-            const src = try self.hostBuf(); defer std.heap.page_allocator.free(src);
-            const dst = try std.heap.page_allocator.alloc(T, self.numel()); defer std.heap.page_allocator.free(dst);
+            const src = try self.hostBuf();
+            defer std.heap.page_allocator.free(src);
+            const dst = try std.heap.page_allocator.alloc(T, self.numel());
+            defer std.heap.page_allocator.free(dst);
             try elem_ops.relu(T, dst, src);
             return fromSlice(dst, self.shape.dims[0..self.shape.ndim]);
         }
 
         /// Element-wise negation: -x. Returns new tensor.
         pub fn neg(self: Self) !Self {
-            const src = try self.hostBuf(); defer std.heap.page_allocator.free(src);
-            const dst = try std.heap.page_allocator.alloc(T, self.numel()); defer std.heap.page_allocator.free(dst);
+            const src = try self.hostBuf();
+            defer std.heap.page_allocator.free(src);
+            const dst = try std.heap.page_allocator.alloc(T, self.numel());
+            defer std.heap.page_allocator.free(dst);
             try elem_ops.neg(T, dst, src);
             return fromSlice(dst, self.shape.dims[0..self.shape.ndim]);
         }
 
         /// Fill every element with `value`. Returns new tensor.
         pub fn fill(self: Self, value: T) !Self {
-            const dst = try std.heap.page_allocator.alloc(T, self.numel()); defer std.heap.page_allocator.free(dst);
+            const dst = try std.heap.page_allocator.alloc(T, self.numel());
+            defer std.heap.page_allocator.free(dst);
             cpu_backend.fillScalar(T, dst, value);
             return fromSlice(dst, self.shape.dims[0..self.shape.ndim]);
         }
@@ -315,10 +335,18 @@ pub fn Tensor(comptime T: type) type {
             return fromSlice(out_host, out_shp.dims[0..out_shp.ndim]);
         }
 
-        fn scalarAdd(a: T, b: T) T { return a + b; }
-        fn scalarSub(a: T, b: T) T { return a - b; }
-        fn scalarMul(a: T, b: T) T { return a * b; }
-        fn scalarDiv(a: T, b: T) T { return a / b; }
+        fn scalarAdd(a: T, b: T) T {
+            return a + b;
+        }
+        fn scalarSub(a: T, b: T) T {
+            return a - b;
+        }
+        fn scalarMul(a: T, b: T) T {
+            return a * b;
+        }
+        fn scalarDiv(a: T, b: T) T {
+            return a / b;
+        }
 
         /// NumPy-style broadcast addition. Shapes are right-aligned.
         pub fn broadcastAdd(self: Self, other: Self) !Self {
@@ -400,7 +428,10 @@ pub fn Tensor(comptime T: type) type {
                     out_ndim += 1;
                 }
             }
-            if (out_ndim == 0) { out_dims[0] = 1; out_ndim = 1; }
+            if (out_ndim == 0) {
+                out_dims[0] = 1;
+                out_ndim = 1;
+            }
             var out_total: usize = 1;
             for (out_dims[0..out_ndim]) |d| out_total *= d;
 
@@ -431,7 +462,11 @@ pub fn Tensor(comptime T: type) type {
                 .int => std.math.minInt(T),
                 else => 0,
             };
-            return self.axisReduceOp(axis, struct { fn f(a: T, b: T) T { return @max(a, b); } }.f, identity);
+            return self.axisReduceOp(axis, struct {
+                fn f(a: T, b: T) T {
+                    return @max(a, b);
+                }
+            }.f, identity);
         }
 
         // ------------------------------------------------------------------ //
@@ -540,8 +575,13 @@ pub fn Tensor(comptime T: type) type {
             try self.buffer.copyToHost(a_host);
             try other.buffer.copyToHost(b_host);
             try transform_op.concat(
-                T, dst, a_host, self.shape.dims[0..ndim_s],
-                b_host, other.shape.dims[0..ndim_s], axis,
+                T,
+                dst,
+                a_host,
+                self.shape.dims[0..ndim_s],
+                b_host,
+                other.shape.dims[0..ndim_s],
+                axis,
             );
             return fromSlice(dst, out_dims[0..ndim_s]);
         }

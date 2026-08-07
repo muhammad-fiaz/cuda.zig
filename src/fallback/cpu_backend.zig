@@ -330,7 +330,10 @@ pub fn reduceAlongAxis(
             out_ndim += 1;
         }
     }
-    if (out_ndim == 0) { out_ndim = 1; out_dims[0] = 1; }
+    if (out_ndim == 0) {
+        out_ndim = 1;
+        out_dims[0] = 1;
+    }
     var out_strides2 = [_]usize{0} ** 8;
     {
         var st: usize = 1;
@@ -371,7 +374,12 @@ pub fn reduceAlongAxis(
         while (di > 0 and carry > 0) {
             di -= 1;
             idx[di] += carry;
-            if (idx[di] >= in_dims[di]) { idx[di] = 0; carry = 1; } else { carry = 0; }
+            if (idx[di] >= in_dims[di]) {
+                idx[di] = 0;
+                carry = 1;
+            } else {
+                carry = 0;
+            }
         }
     }
 }

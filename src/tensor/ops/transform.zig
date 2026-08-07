@@ -86,7 +86,12 @@ pub fn slice(
         while (di > 0 and carry > 0) {
             di -= 1;
             idx[di] += carry;
-            if (idx[di] >= out_dims[di]) { idx[di] = 0; carry = 1; } else { carry = 0; }
+            if (idx[di] >= out_dims[di]) {
+                idx[di] = 0;
+                carry = 1;
+            } else {
+                carry = 0;
+            }
         }
     }
 }
@@ -120,17 +125,29 @@ pub fn concat(
     {
         var st: usize = 1;
         var i: usize = ndim;
-        while (i > 0) { i -= 1; a_strides[i] = st; st *= a_dims[i]; }
+        while (i > 0) {
+            i -= 1;
+            a_strides[i] = st;
+            st *= a_dims[i];
+        }
     }
     {
         var st: usize = 1;
         var i: usize = ndim;
-        while (i > 0) { i -= 1; b_strides[i] = st; st *= b_dims[i]; }
+        while (i > 0) {
+            i -= 1;
+            b_strides[i] = st;
+            st *= b_dims[i];
+        }
     }
     {
         var st: usize = 1;
         var i: usize = ndim;
-        while (i > 0) { i -= 1; out_strides[i] = st; st *= out_dims[i]; }
+        while (i > 0) {
+            i -= 1;
+            out_strides[i] = st;
+            st *= out_dims[i];
+        }
     }
 
     // Iterate output
@@ -162,7 +179,12 @@ pub fn concat(
         while (di > 0 and carry > 0) {
             di -= 1;
             idx[di] += carry;
-            if (idx[di] >= out_dims[di]) { idx[di] = 0; carry = 1; } else { carry = 0; }
+            if (idx[di] >= out_dims[di]) {
+                idx[di] = 0;
+                carry = 1;
+            } else {
+                carry = 0;
+            }
         }
     }
 }
@@ -185,9 +207,9 @@ test "transform transpose 2D" {
 test "transform slice" {
     // src shape [3,4]: rows 0..2, cols 1..3
     const src = [_]f32{
-        0,  1,  2,  3,
-        4,  5,  6,  7,
-        8,  9, 10, 11,
+        0, 1, 2,  3,
+        4, 5, 6,  7,
+        8, 9, 10, 11,
     };
     var dst: [4]f32 = undefined;
     try slice(f32, &dst, &src, &.{ 3, 4 }, &.{ 0, 1 }, &.{ 2, 3 });
