@@ -3,12 +3,13 @@ layout: home
 title: "NVIDIA CUDA Bindings & GPU Programming for Zig | CUDA.zig"
 description: >
   Production-grade CUDA Runtime and Driver API for Zig. Zero link-time dependencies,
-  automatic CPU fallback, Tensor operations, NVRTC, CUDA Graphs, and multi-GPU support.
+  automatic CPU fallback, Tensor operations, NVRTC, CUDA Graphs, Memory Pools, Occupancy,
+  multi-GPU peer access, and 40×+ GPU speedup benchmarks.
 
 hero:
   name: cuda.zig
   text: GPU Computing for Zig
-  tagline: Production-grade CUDA Runtime API with zero link-time dependencies, automatic CPU fallback, and full Zig 0.16 support.
+  tagline: Production-grade CUDA Runtime API with zero link-time dependencies, automatic CPU fallback, memory pools, occupancy profiling, and full Zig 0.16 support.
   image:
     src: /favicon.png
     alt: cuda.zig logo
@@ -35,10 +36,19 @@ features:
     details: High-level Tensor<T> with elementwise ops, reductions, matmul, and optional cuBLAS delegation.
   - icon: 🔀
     title: Streams & Events
-    details: Full async streams, event-based synchronisation, and elapsed-time measurement with a clean Zig API.
+    details: Full async streams, event-based synchronisation, elapsed-time measurement, and priority stream creation.
   - icon: 🌐
     title: Multi-GPU Peer Access
     details: Query and enable peer-to-peer device access, perform cross-device memcpy, and orchestrate multi-GPU workloads.
+  - icon: 🏊
+    title: Memory Pools & Pitched Memory
+    details: Stream-ordered allocation via cudaMallocAsync/cudaFreeAsync and 2D pitched memory for maximum coalescing.
+  - icon: 📊
+    title: Occupancy & Profiler
+    details: Query SM occupancy, stream priorities, and attach profiler session markers to measure GPU kernel efficiency.
+  - icon: 🚀
+    title: 40×+ GPU Speedup
+    details: Verified N-body O(N²) benchmark shows 40× or greater parallel acceleration over sequential CPU on RTX hardware.
   - icon: 📦
     title: Related Zig Projects
     details: >

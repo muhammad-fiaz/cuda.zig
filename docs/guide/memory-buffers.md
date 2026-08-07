@@ -1,17 +1,18 @@
 ---
 title: Memory Buffers
-description: Device memory, host-pinned memory, managed/unified memory, and the CudaAllocator in cuda.zig.
+description: Device memory, host-pinned memory, managed/unified memory, stream-ordered memory pools, and the CudaAllocator in cuda.zig.
 ---
 
 # Memory Buffers
 
-cuda.zig exposes three distinct memory spaces through a uniform, type-safe API:
+cuda.zig exposes four distinct memory spaces through a uniform, type-safe API:
 
 | Type | Location | Accessible by | API |
 |---|---|---|---|
 | `DeviceBuffer(T)` | GPU VRAM | GPU only | `cuda.DeviceBuffer` |
-| `HostBuffer(T)` | Pinned RAM | CPU + DMA | `cuda.HostBuffer` |
-| `ManagedBuffer(T)` | Unified / UM | CPU + GPU | `cuda.ManagedBuffer` |
+| `PinnedBuffer(T)` | Pinned RAM | CPU + DMA | `cuda.PinnedBuffer` |
+| `UnifiedBuffer(T)` | Unified / UM | CPU + GPU | `cuda.UnifiedBuffer` |
+| `PoolBuffer(T)` | GPU VRAM (pool) | GPU only | `cuda.PoolBuffer` |
 
 ## Device Memory
 
@@ -42,7 +43,7 @@ try buf.copyToHostAsync(&out, stream);
 Pinned (page-locked) host memory enables DMA transfers and is required for the fastest H2D / D2H throughput:
 
 ```zig
-var pinned = try cuda.HostBuffer(f32).init(allocator, 1024);
+var pinned = try cuda.PinnedBuffer(f32).alloc(1024);
 defer pinned.deinit();
 
 // Pointer is valid on host and can be directly read/written
@@ -59,21 +60,53 @@ Backed by `cudaHostAlloc` / `cudaFreeHost` with `cudaHostAllocDefault`.
 Unified Memory pages migrate between CPU and GPU automatically:
 
 ```zig
-var managed = try cuda.ManagedBuffer(f32).init(allocator, 1024);
-defer managed.deinit();
+var unif = try cuda.UnifiedBuffer(f32).alloc(1024);
+defer unif.deinit();
 
 // Write from CPU
-managed.slice()[0] = 1.0;
+unif.slice()[0] = 1.0;
 
 // Optional: prefetch to GPU before a kernel
-try managed.prefetchToDevice(0, stream);
+try unif.prefetchToDevice(0, stream);
 
-// Optional: advise access patterns
-try managed.advise(.PreferredLocation, 0);
-try managed.advise(.AccessedBy, 0);
+// Optional: prefetch back to CPU
+try unif.prefetchToHost(stream);
 ```
 
 Backed by `cudaMallocManaged` with `cudaMemAttachGlobal`.
+
+## Memory Pools {#memory-pools}
+
+Stream-ordered memory pools (`cudaMallocAsync` / `cudaFreeAsync`) allow the CUDA runtime to reuse allocations within the same stream, dramatically reducing allocation overhead in iterative workloads:
+
+```zig
+var stream = try cuda.Stream.init();
+defer stream.deinit();
+
+// Allocate from the stream-ordered pool
+var pool_buf = try cuda.PoolBuffer(f32).alloc(1024, stream.handle);
+defer pool_buf.freeOnStream(stream.handle) catch {};
+
+std.debug.print("Pool size: {d} bytes\n", .{pool_buf.byteSize()});
+```
+
+> [!NOTE]
+> `PoolBuffer` requires CUDA 11.2+ runtime symbols (`cudaMallocAsync`). On older runtimes cuda.zig returns an error gracefully — check availability with `cuda.isAvailable()`.
+
+## 2D Pitched Memory
+
+2D pitched memory aligns each row to the hardware's preferred pitch for coalesced access in 2D kernels (image processing, matrix operations):
+
+```zig
+// Allocate a 512×512 float matrix with hardware-optimal pitch
+const pitch_res = try cuda.runtime.memory.mallocPitch(512 * @sizeOf(f32), 512);
+defer cuda.runtime.memory.freeDevice(pitch_res.ptr);
+
+std.debug.print("Pitch: {d} bytes\n", .{pitch_res.pitch});
+
+// 2D async copy using the returned pitch
+try cuda.runtime.memory.memcpy2DAsync(dst, pitch_res.pitch, src, src_pitch, width, height, stream);
+```
 
 ## CudaAllocator
 

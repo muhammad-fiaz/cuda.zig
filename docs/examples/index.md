@@ -8,9 +8,8 @@ description: Runnable code examples for every cuda.zig feature.
 Each example is a standalone Zig program in the [`examples/`](https://github.com/muhammad-fiaz/cuda.zig/tree/main/examples) directory. Run any of them with:
 
 ```sh
-zig build example-01   # device info
-zig build example-02   # memory transfer
-# ... etc
+zig build run-all-examples          # run every example sequentially
+zig build example-device-info       # run a single example by name
 ```
 
 | # | Name | What it demonstrates |
@@ -26,3 +25,5 @@ zig build example-02   # memory transfer
 | [09](/examples/09-nvrtc-compilation) | NVRTC Compilation | Runtime PTX compilation and launch |
 | [10](/examples/10-memory-pools-pitched) | Memory Pools & 2D Pitched | Stream-ordered pool allocations & 2D pitched memory |
 | [11](/examples/11-occupancy-profiler) | Occupancy & Profiler | Occupancy calculator, stream priority & profiler markers |
+| [12](/examples/12-benchmark-matrix-ops) | CPU vs GPU Benchmark | O(N²) N-body simulation — 40×+ GPU speedup measured |
+

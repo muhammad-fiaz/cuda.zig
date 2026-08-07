@@ -22,7 +22,7 @@ Without a GPU or CUDA Toolkit, cuda.zig automatically falls back to a transparen
 ### Stable (via `zig fetch`)
 
 ```sh
-zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.1.tar.gz
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz
 ```
 
 ### Development / Nightly (directly from GitHub)
@@ -38,7 +38,7 @@ After running `zig fetch`, your `build.zig.zon` will contain an entry like:
 ```zig
 .dependencies = .{
     .cuda = .{
-        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.1.tar.gz",
+        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz",
         .hash = "<sha256 printed by zig fetch>",
     },
 },
@@ -93,5 +93,7 @@ zig build run
 
 - [Installation guide](/guide/installation) — build options, feature flags, Docker
 - [Device Management](/guide/device-management) — enumerate GPUs, read properties
-- [Memory Buffers](/guide/memory-buffers) — device, host-pinned, and managed memory
+- [Memory Buffers](/guide/memory-buffers) — device, host-pinned, managed memory, and stream-ordered pools
 - [Kernel Launch](/guide/kernel-launch) — PTX, dynamic shared memory, argument marshaling
+- [Tensor Operations](/guide/tensor-ops) — high-level `Tensor(T)` elementwise, reduction, matmul
+- [CPU vs GPU Benchmark](/examples/12-benchmark-matrix-ops) — see measured GPU speedup on real hardware
