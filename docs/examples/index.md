@@ -26,4 +26,6 @@ zig build example-device-info       # run a single example by name
 | [10](/examples/10-memory-pools-pitched) | Memory Pools & 2D Pitched | Stream-ordered pool allocations & 2D pitched memory |
 | [11](/examples/11-occupancy-profiler) | Occupancy & Profiler | Occupancy calculator, stream priority & profiler markers |
 | [12](/examples/12-benchmark-matrix-ops) | CPU vs GPU Benchmark | O(N²) N-body simulation — 40×+ GPU speedup measured |
+| [13](/examples/13-ndarray-tensor-ops) | N-D Tensor Operations | Reshape, transpose, broadcast, axis reductions, batched matmul |
+
 

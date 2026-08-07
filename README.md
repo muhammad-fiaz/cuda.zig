@@ -78,7 +78,7 @@
 | **NVRTC Compilation** | Runtime compilation of CUDA C++ source strings to PTX assembly. |
 | **Profiler Integration** | Scoped session tracking via `profiler.start()`, `profiler.stop()`, and `ProfilerGuard`. |
 | **Multi-GPU & Peer Access** | `canAccessPeer`, `enablePeerAccess`, `disablePeerAccess`, and cross-device transfers. |
-| **Tensor Abstraction** | Generic `Tensor(T)` struct supporting shape manipulation, elementwise ops (add, sub, mul, div, relu), reductions (sum, mean), and matrix multiplication. |
+| **Tensor Abstraction** | Generic `Tensor(T)` struct supporting up to **8-D shapes**, elementwise ops, broadcast add/sub/mul/div, reductions (sum, mean, min, max, sumAxis, maxAxis), 2-D/3-D/4-D batched matmul, reshape, transpose, slice, and concat. |
 | **CudaAllocator** | `std.mem.Allocator` vtable implementation backed by GPU global device memory. |
 
 </details>
@@ -98,7 +98,7 @@ Before using `cuda.zig`, ensure you have the following:
 |-------------|---------|-------|
 | **Zig** | 0.16.0+ | Download from [ziglang.org](https://ziglang.org/download/) |
 | **Operating System** | Windows 10+, Linux, macOS | Cross-platform GPU computing |
-| **CUDA Driver (Optional)** | 12.0 - 13.3 | Optional runtime dependency; falls back to CPU if absent |
+| **CUDA Driver (Optional)** | 12.0 - 13.4 | Optional runtime dependency; falls back to CPU if absent |
 
 ---
 
@@ -132,10 +132,10 @@ zig build -Dtarget=x86_64-windows
 
 ### Method 1: Zig Fetch (Recommended)
 
-**Latest Stable Release (v0.0.1)**
+**Latest Release (v0.0.2)**
 
 ```bash
-zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.1.tar.gz
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz
 ```
 
 ### Method 2: Zig Fetch (Development / Nightly)
@@ -153,7 +153,7 @@ Add the dependency to your `build.zig.zon` file.
 ```zig
 .dependencies = .{
     .cuda = .{
-        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.1.tar.gz",
+        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz",
         .hash = "...", // Run `zig fetch --save <url>` to generate the hash.
     },
 },
@@ -235,28 +235,25 @@ const cuda = @import("cuda");
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
-    const a_data = [_]f32{ 1.0, 2.0, 3.0, 4.0 };
-    const b_data = [_]f32{ 5.0, 6.0, 7.0, 8.0 };
-
-    var a = try cuda.Tensor(f32).fromSlice(&a_data, &.{ 2, 2 });
+    // N-Dimensional Tensor Broadcasting
+    var a = try cuda.Tensor(f32).fromSlice(&.{ 1, 2, 3, 4, 5, 6 }, &.{ 2, 3 });
     defer a.deinit();
+    var bias = try cuda.Tensor(f32).fromSlice(&.{ 10, 20, 30 }, &.{3});
+    defer bias.deinit();
 
-    var b = try cuda.Tensor(f32).fromSlice(&b_data, &.{ 2, 2 });
-    defer b.deinit();
-
-    var c = try a.matmul(b);
+    var c = try a.broadcastAdd(bias);
     defer c.deinit();
 
     const result = try c.toHost(allocator);
     defer allocator.free(result);
 
-    std.debug.print("Matmul output: {any}\n", .{result});
+    std.debug.print("Broadcast Output: {any}\n", .{result});
 }
 ```
 
 ## Examples
 
-The `examples/` directory contains **12 runnable examples**:
+The `examples/` directory contains **13 runnable examples**:
 
 - [`01_device_info`](examples/01_device_info.zig) - Device enumeration, compute capability, and memory specs
 - [`02_memory_transfer`](examples/02_memory_transfer.zig) - Host-to-Device and Device-to-Host transfers
@@ -270,6 +267,7 @@ The `examples/` directory contains **12 runnable examples**:
 - [`10_memory_pools_pitched`](examples/10_memory_pools_pitched.zig) - Stream-ordered memory pool allocations and 2D pitched memory
 - [`11_occupancy_profiler`](examples/11_occupancy_profiler.zig) - Kernel occupancy calculations, stream priorities, and profiler markers
 - [`12_benchmark_matrix_ops`](examples/12_benchmark_matrix_ops.zig) - Parallel N-Body compute benchmark comparing Single-Threaded CPU vs CUDA GPU
+- [`13_ndarray_tensor_ops`](examples/13_ndarray_tensor_ops.zig) - Reshape, transpose, broadcast, axis reductions, batched matmul
 
 To run any example:
 ```bash
@@ -285,6 +283,7 @@ zig build example-nvrtc-compilation
 zig build example-memory-pools-pitched
 zig build example-occupancy-profiler
 zig build example-benchmark-matrix-ops
+zig build example-ndarray-tensor-ops
 ```
 
 ## Validation & Testing

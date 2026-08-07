@@ -35,6 +35,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "example-memory-pools-pitched", .path = "examples/10_memory_pools_pitched.zig" },
         .{ .name = "example-occupancy-profiler", .path = "examples/11_occupancy_profiler.zig" },
         .{ .name = "example-benchmark-matrix-ops", .path = "examples/12_benchmark_matrix_ops.zig" },
+        .{ .name = "example-ndarray-tensor-ops", .path = "examples/13_ndarray_tensor_ops.zig" },
     };
 
     const run_all_step = b.step("run-all-examples", "Run all example executables");

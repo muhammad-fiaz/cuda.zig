@@ -299,6 +299,7 @@ export default defineConfig({
             { text: "10 — Memory Pools & 2D Pitched", link: "/examples/10-memory-pools-pitched" },
             { text: "11 — Occupancy & Profiler", link: "/examples/11-occupancy-profiler" },
             { text: "12 — CPU vs GPU Benchmark", link: "/examples/12-benchmark-matrix-ops" },
+            { text: "13 — N-D Tensor Ops", link: "/examples/13-ndarray-tensor-ops" },
           ],
         },
       ],

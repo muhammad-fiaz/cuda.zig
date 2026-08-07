@@ -1,97 +1,89 @@
 ---
 title: Tensor API
-description: High-level Tensor(T) API — elementwise, reduction, matmul, and shape operations in cuda.zig.
+description: High-level N-Dimensional Tensor(T) API — elementwise, broadcast, reduction, batched matmul, reshape, transpose, and slice operations in cuda.zig.
 ---
 
 # Tensor API
+
+`cuda.Tensor(T)` is an N-Dimensional tensor supporting up to **8 dimensions** (`MAX_DIMS = 8`), row-major C-contiguous memory layout, and dynamic CPU/GPU dispatch.
 
 ## `cuda.Tensor(T)`
 
 ```zig
 pub fn Tensor(comptime T: type) type {
     return struct {
-        /// Shape: up to 4 dimensions. Unused dimensions are 1.
-        shape: [4]usize,
-        buf: DeviceBuffer(T),
+        buffer: DeviceBuffer(T),
+        shape: Shape,
 
         // ---- Lifecycle ----
+        pub fn zeros(shape_slice: []const usize) !Self
+        pub fn fromSlice(data: []const T, shape_slice: []const usize) !Self
+        pub fn clone(self: Self) !Self
+        pub fn deinit(self: *Self) void
 
-        /// Allocate a tensor with the given shape (1–4 dimensions).
-        pub fn init(allocator: std.mem.Allocator, shape: anytype) !@This()
+        // ---- Introspection ----
+        pub fn numel(self: Self) usize
+        pub fn ndim(self: Self) usize
+        pub fn size(self: Self, dim: usize) usize
+        pub fn toHost(self: Self, allocator: std.mem.Allocator) ![]T
+        pub fn print(self: Self) void
 
-        /// Free device memory.
-        pub fn deinit(self: *@This()) void
+        // ---- Shape Transforms ----
+        pub fn reshape(self: Self, new_shape: []const usize) !Self
+        pub fn flatten(self: Self) !Self
+        pub fn squeeze(self: Self, axis: ?usize) !Self
+        pub fn unsqueeze(self: Self, axis: usize) !Self
+        pub fn transpose(self: Self, perm: []const usize) !Self
+        pub fn T2(self: Self) !Self
 
-        // ---- Data transfer ----
+        // ---- Same-shape Elementwise ----
+        pub fn add(self: Self, other: Self) !Self
+        pub fn sub(self: Self, other: Self) !Self
+        pub fn mul(self: Self, other: Self) !Self
+        pub fn div(self: Self, other: Self) !Self
+        pub fn relu(self: Self) !Self
+        pub fn neg(self: Self) !Self
+        pub fn fill(self: Self, value: T) !Self
 
-        /// Copy a flat host slice into the tensor.
-        pub fn copyFromHost(self: @This(), src: []const T) !void
-
-        /// Copy the tensor into a flat host slice.
-        pub fn copyToHost(self: @This(), dst: []T) !void
-
-        // ---- Elementwise (in-place) ----
-
-        pub fn add_scalar(self: @This(), val: T) !void
-        pub fn sub_scalar(self: @This(), val: T) !void
-        pub fn mul_scalar(self: @This(), val: T) !void
-        pub fn scale(self: @This(), factor: T) !void
-
-        // ---- Elementwise (binary, out-of-place) ----
-
-        pub fn add(a: @This(), b: @This(), c: @This()) !void
-        pub fn sub(a: @This(), b: @This(), c: @This()) !void
-        pub fn mul(a: @This(), b: @This(), c: @This()) !void
-        pub fn div(a: @This(), b: @This(), c: @This()) !void
+        // ---- NumPy-style Broadcast Elementwise ----
+        pub fn broadcastAdd(self: Self, other: Self) !Self
+        pub fn broadcastSub(self: Self, other: Self) !Self
+        pub fn broadcastMul(self: Self, other: Self) !Self
+        pub fn broadcastDiv(self: Self, other: Self) !Self
 
         // ---- Reductions ----
+        pub fn sum(self: Self) !T
+        pub fn mean(self: Self) !T
+        pub fn max(self: Self) !T
+        pub fn min(self: Self) !T
+        pub fn sumAxis(self: Self, axis: usize) !Self
+        pub fn maxAxis(self: Self, axis: usize) !Self
 
-        pub fn sum(self: @This()) !T
-        pub fn max(self: @This()) !T
-        pub fn min(self: @This()) !T
-        pub fn mean(self: @This()) !T
+        // ---- Matrix Multiplication ----
+        pub fn matmul(self: Self, other: Self) !Self           // 2-D: [M,K] @ [K,N] -> [M,N]
+        pub fn batchedMatmul(self: Self, other: Self) !Self    // 3-D/4-D: [B,M,K] @ [B,K,N] -> [B,M,N]
 
-        // ---- Matrix multiplication ----
-
-        /// C = A @ B  (A: [M,K], B: [K,N], C: [M,N])
-        pub fn matmul(a: @This(), b: @This(), c: @This()) !void
-
-        // ---- Async variants ----
-
-        pub fn add_async(a: @This(), b: @This(), c: @This(), stream: Stream) !void
-        pub fn matmul_async(a: @This(), b: @This(), c: @This(), stream: Stream) !void
-
-        // ---- Utility ----
-
-        /// Total number of elements.
-        pub fn numel(self: @This()) usize
-
-        /// Raw device pointer.
-        pub fn devicePtr(self: @This()) CUdeviceptr
+        // ---- Selection & Structural ----
+        pub fn slice(self: Self, starts: []const usize, ends: []const usize) !Self
+        pub fn concat(self: Self, other: Self, axis: usize) !Self
     };
 }
 ```
 
-## Supported Types
-
-| Type | Elementwise | Matmul (Zig) | Matmul (cuBLAS) |
-|---|---|---|---|
-| `f32` | ✅ | ✅ | ✅ |
-| `f64` | ✅ | ✅ | ✅ |
-| `i32` | ✅ | ❌ | ❌ |
-| `i64` | ✅ | ❌ | ❌ |
-
-## Shape Conventions
+## `cuda.Shape`
 
 ```zig
-// 1D
-try cuda.Tensor(f32).init(allocator, .{1024})
+pub const MAX_DIMS = 8;
 
-// 2D
-try cuda.Tensor(f32).init(allocator, .{ 128, 64 })
+pub const Shape = struct {
+    dims: [MAX_DIMS]usize,
+    ndim: usize,
 
-// 3D batch
-try cuda.Tensor(f32).init(allocator, .{ 8, 128, 64 })
+    pub fn init(shape_slice: []const usize) !Shape
+    pub fn totalElements(self: Shape) usize
+    pub fn computeContiguousStrides(self: Shape, strides_out: []usize) void
+    pub fn eq(self: Shape, other: Shape) bool
+    pub fn broadcastWith(self: Shape, other: Shape) !Shape
+    pub fn permute(self: Shape, perm: []const usize) !Shape
+};
 ```
-
-Internally shapes are stored as `[4]usize` (trailing dimensions default to 1).
