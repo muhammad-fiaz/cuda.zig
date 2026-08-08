@@ -1,128 +1,66 @@
 ---
-title: Kernel API
-description: Module loading, function lookup, kernel launch, and CUDA Graphs API in cuda.zig.
+title: Kernel API Documentation
+description: Reference for KernelModule, LaunchConfig, kernel launch, occupancy calculator, and CUDA Graphs in cuda.zig.
 ---
 
-# Kernel API
+# Kernel API Reference
 
-## `cuda.Module`
+The `cuda.kernel` namespace handles compiling, loading, configuring, launching, and capturing CUDA kernels.
 
-Wraps a CUDA driver module (PTX, cubin, or fatbin).
+## Launching Kernels
 
 ```zig
-pub const Module = struct {
-    handle: CUmodule,
-
-    /// Load a PTX/cubin/fatbin string. The string must be null-terminated.
-    pub fn load(ptx: []const u8) !Module
-
-    /// Load from a file path.
-    pub fn loadFile(path: [:0]const u8) !Module
-
-    /// Destroy the module and all functions loaded from it.
-    pub fn deinit(self: *Module) void
-
-    /// Look up a kernel function by name.
-    pub fn getFunction(self: Module, name: [:0]const u8) !Function
+const config = cuda.LaunchConfig{
+    .grid = .{ 16, 1, 1 },
+    .block = .{ 256, 1, 1 },
+    .shared_mem_bytes = 0,
+    .stream = stream,
 };
+
+try cuda.launch(func, config, .{ arg1, arg2 });
 ```
 
-## `cuda.Function`
+## Occupancy Calculator (`cuda.occupancy`)
+
+Find optimal grid/block configurations to maximize Streaming Multiprocessor (SM) utilization.
 
 ```zig
-pub const Function = struct {
-    handle: CUfunction,
+const occ = @import("cuda").occupancy;
 
-    /// Launch the kernel.
-    /// `args` is a tuple of pointers to each kernel parameter.
-    pub fn launch(
-        self: Function,
-        grid:  Dim3,
-        block: Dim3,
-        shared_bytes: usize,
-        stream: Stream,
-        args: anytype,
-    ) !void
+// Find maximum active blocks per SM for a given block size
+const blocks_per_sm = try occ.maxActiveBlocksPerMultiprocessor(func_ptr, 256, 0);
 
-    /// Suggest an optimal block size for maximum occupancy.
-    /// Returns the recommended threads-per-block value.
-    pub fn suggestBlockSize(self: Function, dynamic_smem_per_thread: usize) !u32
-};
+// Suggest optimal block size and grid size
+const config = try occ.maxPotentialBlockSize(func_ptr, 0, 0);
+// config.block_size: suggested threads/block
+// config.min_grid_size: suggested blocks for full SM utilization
 ```
 
-## `cuda.Dim3`
+### Occupancy Functions
+
+| Function | Description |
+|----------|-------------|
+| `maxActiveBlocksPerMultiprocessor(func, block_size, smem)` | Active blocks per SM |
+| `maxPotentialBlockSize(func, smem, block_limit)` | Calculate optimal block/grid sizes |
+
+## Dynamic Kernel Compilation (`cuda.NvrtcCompiler`)
+
+Compile CUDA C++ source code to PTX at runtime:
 
 ```zig
-pub const Dim3 = struct {
-    x: u32 = 1,
-    y: u32 = 1,
-    z: u32 = 1,
-};
+var compiler = try cuda.NvrtcCompiler.init(source_code, "my_kernel.cu");
+defer compiler.deinit();
+
+try compiler.compile(&.{ "--gpu-architecture=compute_89" });
+const ptx = try compiler.getPTX(allocator);
+defer allocator.free(ptx);
 ```
 
-## CUDA Graphs
-
-CUDA Graphs allow capturing a sequence of GPU operations and replaying them with reduced CPU overhead.
+## Kernel Modules & Functions
 
 ```zig
-pub const Graph = struct {
-    handle: CUgraph,
+var mod = try cuda.kernel.KernelModule.loadData(ptx);
+defer mod.unload();
 
-    /// Create an empty graph.
-    pub fn init() !Graph
-    pub fn deinit(self: *Graph) void
-
-    /// Instantiate the graph into an executable graph.
-    pub fn instantiate(self: Graph) !GraphExec
-};
-
-pub const GraphExec = struct {
-    handle: CUgraphExec,
-
-    /// Execute the graph on the given stream.
-    pub fn launch(self: GraphExec, stream: Stream) !void
-
-    /// Destroy the executable graph.
-    pub fn deinit(self: *GraphExec) void
-};
-```
-
-### Stream Capture
-
-The recommended way to build a graph is by capturing stream operations:
-
-```zig
-var stream = try cuda.Stream.init();
-defer stream.deinit();
-
-// Begin capture
-try stream.beginCapture(.Global);
-
-// Enqueue operations to capture
-try buf.copyFromHostAsync(&host_data, stream);
-// ... launch kernels async on stream ...
-
-// End capture — returns the captured Graph
-var graph = try stream.endCapture();
-defer graph.deinit();
-
-// Instantiate once
-var exec = try graph.instantiate();
-defer exec.deinit();
-
-// Replay many times with minimal overhead
-for (0..1000) |_| {
-    try exec.launch(stream);
-    try stream.sync();
-}
-```
-
-### `StreamCaptureMode`
-
-```zig
-pub const StreamCaptureMode = enum {
-    Global,
-    ThreadLocal,
-    Relaxed,
-};
+const func = try mod.getFunction("my_kernel");
 ```

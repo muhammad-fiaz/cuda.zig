@@ -32,6 +32,10 @@ pub fn build(b: *std.Build) void {
         .{ .name = "example-cpu-fallback", .path = "examples/07_cpu_fallback.zig" },
         .{ .name = "example-managed-memory", .path = "examples/08_managed_memory.zig" },
         .{ .name = "example-nvrtc-compilation", .path = "examples/09_nvrtc_compilation.zig" },
+        .{ .name = "example-memory-pools-pitched", .path = "examples/10_memory_pools_pitched.zig" },
+        .{ .name = "example-occupancy-profiler", .path = "examples/11_occupancy_profiler.zig" },
+        .{ .name = "example-benchmark-matrix-ops", .path = "examples/12_benchmark_matrix_ops.zig" },
+        .{ .name = "example-ndarray-tensor-ops", .path = "examples/13_ndarray_tensor_ops.zig" },
     };
 
     const run_all_step = b.step("run-all-examples", "Run all example executables");

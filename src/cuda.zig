@@ -72,8 +72,19 @@ pub const tensor = struct {
     pub const Tensor = @import("tensor/tensor.zig").Tensor;
     pub const Shape = @import("tensor/shape.zig").Shape;
     pub const DType = @import("tensor/dtype.zig").DType;
+    pub const transform = @import("tensor/ops/transform.zig");
 };
 pub const Tensor = tensor.Tensor;
+pub const Shape = tensor.Shape;
+pub const DType = tensor.DType;
+
+// Memory Pool (v0.0.2)
+pub const pool = @import("memory/pool.zig");
+pub const PoolBuffer = pool.PoolBuffer;
+
+// Occupancy & Profiler (v0.0.2)
+pub const occupancy = @import("kernel/occupancy.zig");
+pub const profiler = @import("utils/profiler.zig");
 
 // CPU Fallback
 pub const fallback = struct {

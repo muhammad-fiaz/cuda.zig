@@ -33,11 +33,11 @@ pub fn allocDevice(size: usize) err.CudaError!*anyopaque {
     if (ldr.getDriverSymbol(*const fn (*u64, usize) callconv(.c) c_int, "cuMemAlloc_v2")) |f| {
         var dptr: u64 = 0;
         try result.checkDriver(f(&dptr, size));
-        return @ptrFromInt(dptr);
+        return @ptrFromInt(@as(usize, @intCast(dptr)));
     } else if (ldr.getDriverSymbol(*const fn (*u64, usize) callconv(.c) c_int, "cuMemAlloc")) |f| {
         var dptr: u64 = 0;
         try result.checkDriver(f(&dptr, size));
-        return @ptrFromInt(dptr);
+        return @ptrFromInt(@as(usize, @intCast(dptr)));
     }
     return error.NotInitialized;
 }
@@ -249,7 +249,7 @@ pub fn allocManaged(size: usize, flags: c_uint) err.CudaError!*anyopaque {
     if (ldr.getDriverSymbol(*const fn (*u64, usize, c_uint) callconv(.c) c_int, "cuMemAllocManaged")) |f| {
         var dptr: u64 = 0;
         try result.checkDriver(f(&dptr, size, flags));
-        return @ptrFromInt(dptr);
+        return @ptrFromInt(@as(usize, @intCast(dptr)));
     }
     return error.NotInitialized;
 }
@@ -265,7 +265,7 @@ pub fn memPrefetchAsync(ptr: *const anyopaque, count: usize, device: i32, stream
     const ldr = loader.globalLoader();
     if (ldr.getRuntimeSymbol(ffi.MemPrefetchAsyncFn, "cudaMemPrefetchAsync")) |f| {
         result.checkRuntime(f(ptr, count, device, stream)) catch |e| switch (e) {
-            error.InvalidDevice => return,
+            error.InvalidDevice, error.InvalidValue, error.NotSupported => return,
             else => return e,
         };
         return;
@@ -280,7 +280,7 @@ pub fn memPrefetchAsync(ptr: *const anyopaque, count: usize, device: i32, stream
             }
         }
         result.checkDriver(f(@intFromPtr(ptr), count, target_dev, stream)) catch |e| switch (e) {
-            error.InvalidDevice => return,
+            error.InvalidDevice, error.InvalidValue, error.NotSupported => return,
             else => return e,
         };
         return;
@@ -302,10 +302,165 @@ pub fn memAdvise(ptr: *const anyopaque, count: usize, advice: ffi.MemAdvise, dev
     try result.checkRuntime(f(ptr, count, @intFromEnum(advice), @intCast(device)));
 }
 
+// Async Memory Pool APIs
+
+/// Allocates `size` bytes from the stream-ordered allocator on `stream`.
+///
+/// Uses `cudaMallocAsync` (CUDA 11.2+). Memory is automatically returned to
+/// the pool when `freeAsync` is called on the same stream (or a stream that
+/// synchronizes with it). Requires a device that supports memory pools
+/// (`deviceProps.memory_pools_supported`).
+pub fn allocAsync(size: usize, stream: ffi.Stream) err.CudaError!*anyopaque {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.MallocAsyncFn, "cudaMallocAsync")) |f| {
+        var ptr: ?*anyopaque = null;
+        try result.checkRuntime(f(&ptr, size, stream));
+        return ptr orelse return error.OutOfMemory;
+    }
+    // Driver API fallback: cuMemAllocAsync (CUDA 11.2+)
+    if (ldr.getDriverSymbol(*const fn (*u64, usize, ?*anyopaque) callconv(.c) c_int, "cuMemAllocAsync")) |f| {
+        var dptr: u64 = 0;
+        try result.checkDriver(f(&dptr, size, stream));
+        return @ptrFromInt(@as(usize, @intCast(dptr)));
+    }
+    // Last resort: synchronous cudaMalloc — semantically equivalent on systems without pool support
+    return allocDevice(size);
+}
+
+/// Frees memory previously allocated with `allocAsync` on the given `stream`.
+pub fn freeAsync(ptr: *anyopaque, stream: ffi.Stream) err.CudaError!void {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.FreeAsyncFn, "cudaFreeAsync")) |f| {
+        try result.checkRuntime(f(ptr, stream));
+        return;
+    }
+    // Driver API fallback
+    if (ldr.getDriverSymbol(*const fn (u64, ?*anyopaque) callconv(.c) c_int, "cuMemFreeAsync")) |f| {
+        try result.checkDriver(f(@intFromPtr(ptr), stream));
+        return;
+    }
+    // Last resort: synchronous free
+    freeDevice(ptr);
+}
+
+// Pitched / 2-D Memory
+
+/// Allocates a 2-D block of device memory with optimal row pitch.
+///
+/// Returns the device pointer and actual row pitch in bytes. Use the returned
+/// `pitch` (not `width_bytes`) as the row stride for subsequent `memcpy2D`
+/// calls. This ensures hardware-optimal alignment for texture / 2-D access.
+pub fn mallocPitch(width_bytes: usize, height: usize) err.CudaError!struct {
+    ptr: *anyopaque,
+    pitch: usize,
+} {
+    const ldr = loader.globalLoader();
+    if (ldr.getRuntimeSymbol(ffi.MallocPitchFn, "cudaMallocPitch")) |f| {
+        var ptr: ?*anyopaque = null;
+        var pitch: usize = 0;
+        try result.checkRuntime(f(&ptr, &pitch, width_bytes, height));
+        return .{ .ptr = ptr orelse return error.OutOfMemory, .pitch = pitch };
+    }
+    // Driver API fallback: cuMemAllocPitch
+    if (ldr.getDriverSymbol(*const fn (*u64, *usize, usize, usize, c_uint) callconv(.c) c_int, "cuMemAllocPitch_v2") orelse
+        ldr.getDriverSymbol(*const fn (*u64, *usize, usize, usize, c_uint) callconv(.c) c_int, "cuMemAllocPitch")) |f|
+    {
+        var dptr: u64 = 0;
+        var pitch: usize = 0;
+        // element_size_bytes = 4 (float default); use width_bytes mod 16 to pick 4/8/16
+        const elem_size: c_uint = if (width_bytes % 16 == 0) 16 else if (width_bytes % 8 == 0) 8 else 4;
+        try result.checkDriver(f(&dptr, &pitch, width_bytes, height, elem_size));
+        return .{ .ptr = @ptrFromInt(@as(usize, @intCast(dptr))), .pitch = pitch };
+    }
+    return error.NotInitialized;
+}
+
+/// Copies a 2-D region of `width` × `height` bytes between pitched buffers.
+pub fn memcpy2D(
+    dst: *anyopaque,
+    dpitch: usize,
+    src: *const anyopaque,
+    spitch: usize,
+    width: usize,
+    height: usize,
+    kind: ffi.MemcpyKind,
+) err.CudaError!void {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.Memcpy2DFn, "cudaMemcpy2D") orelse
+        return error.NotInitialized;
+    try result.checkRuntime(f(dst, dpitch, src, spitch, width, height, @intFromEnum(kind)));
+}
+
+/// Asynchronous 2-D memcpy on the given stream.
+pub fn memcpy2DAsync(
+    dst: *anyopaque,
+    dpitch: usize,
+    src: *const anyopaque,
+    spitch: usize,
+    width: usize,
+    height: usize,
+    kind: ffi.MemcpyKind,
+    stream: ffi.Stream,
+) err.CudaError!void {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.Memcpy2DAsyncFn, "cudaMemcpy2DAsync") orelse
+        return error.NotInitialized;
+    try result.checkRuntime(f(dst, dpitch, src, spitch, width, height, @intFromEnum(kind), stream));
+}
+
+// IPC Memory (inter-process GPU memory sharing)
+
+/// Exports a device pointer as an OS-level IPC handle.
+///
+/// `ptr` must be the base pointer of a cudaMalloc'd allocation (not an offset).
+/// The 64-byte handle can be sent to another process via shared memory, pipe,
+/// or socket. The other process opens it with `ipcOpenMemHandle`.
+pub fn ipcGetMemHandle(ptr: *anyopaque) err.CudaError!ffi.IpcMemHandle {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.IpcGetMemHandleFn, "cudaIpcGetMemHandle") orelse
+        return error.NotInitialized;
+    var handle: ffi.IpcMemHandle = undefined;
+    try result.checkRuntime(f(&handle, ptr));
+    return handle;
+}
+
+/// Opens an IPC memory handle exported by another process.
+///
+/// `flags` should be `0` (future versions may add flag bits). The returned
+/// pointer is valid in this process until `ipcCloseMemHandle` is called.
+pub fn ipcOpenMemHandle(handle: ffi.IpcMemHandle, flags: c_uint) err.CudaError!*anyopaque {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.IpcOpenMemHandleFn, "cudaIpcOpenMemHandle") orelse
+        return error.NotInitialized;
+    var ptr: ?*anyopaque = null;
+    try result.checkRuntime(f(&ptr, handle, flags));
+    return ptr orelse return error.OutOfMemory;
+}
+
+/// Closes an IPC memory handle, releasing the mapping in this process.
+///
+/// Does not free the underlying allocation; the exporting process must call
+/// `freeDevice` on the original pointer.
+pub fn ipcCloseMemHandle(ptr: *anyopaque) err.CudaError!void {
+    const ldr = loader.globalLoader();
+    const f = ldr.getRuntimeSymbol(ffi.IpcCloseMemHandleFn, "cudaIpcCloseMemHandle") orelse
+        return error.NotInitialized;
+    try result.checkRuntime(f(ptr));
+}
+
 test "runtime memory without CUDA" {
     if (!loader.isAvailable()) return error.SkipZigTest;
     // On a machine with CUDA, test a small round-trip.
     const size = 64;
     const dev = try allocDevice(size);
     freeDevice(dev);
+}
+
+test "memAdvise is accessible" {
+    _ = memAdvise;
+}
+
+test "allocAsync signature" {
+    _ = allocAsync;
+    _ = freeAsync;
 }

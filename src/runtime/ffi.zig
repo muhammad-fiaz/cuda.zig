@@ -218,6 +218,62 @@ pub const LaunchKernelFn = *const fn (
     args: [*]?*anyopaque,
 ) callconv(.c) c_int;
 
+// Async Memory Pool APIs
+pub const MemPool = ?*anyopaque;
+pub const MallocAsyncFn = *const fn (devPtr: *?*anyopaque, size: usize, stream: Stream) callconv(.c) c_int;
+pub const FreeAsyncFn = *const fn (devPtr: ?*anyopaque, stream: Stream) callconv(.c) c_int;
+pub const MemPoolCreateFn = *const fn (pool: *MemPool, props: *const anyopaque) callconv(.c) c_int;
+pub const MemPoolDestroyFn = *const fn (pool: MemPool) callconv(.c) c_int;
+pub const MallocFromPoolAsyncFn = *const fn (devPtr: *?*anyopaque, size: usize, pool: MemPool, stream: Stream) callconv(.c) c_int;
+pub const MemPoolSetAttributeFn = *const fn (pool: MemPool, attr: c_int, value: *anyopaque) callconv(.c) c_int;
+pub const MemPoolGetAttributeFn = *const fn (pool: MemPool, attr: c_int, value: *anyopaque) callconv(.c) c_int;
+
+// Pitched 2-D Memory
+pub const MallocPitchFn = *const fn (devPtr: *?*anyopaque, pitch: *usize, width_bytes: usize, height: usize) callconv(.c) c_int;
+pub const Memcpy2DFn = *const fn (dst: ?*anyopaque, dpitch: usize, src: ?*const anyopaque, spitch: usize, width: usize, height: usize, kind: c_int) callconv(.c) c_int;
+pub const Memcpy2DAsyncFn = *const fn (dst: ?*anyopaque, dpitch: usize, src: ?*const anyopaque, spitch: usize, width: usize, height: usize, kind: c_int, stream: Stream) callconv(.c) c_int;
+
+// Occupancy
+pub const OccupancyMaxActiveBlocksPerMultiprocessorFn = *const fn (
+    num_blocks: *c_int,
+    func: ?*const anyopaque,
+    block_size: c_int,
+    dynamic_smem_size: usize,
+) callconv(.c) c_int;
+pub const OccupancyMaxPotentialBlockSizeFn = *const fn (
+    min_grid_size: *c_int,
+    block_size: *c_int,
+    func: ?*const anyopaque,
+    block_size_to_dynamic_smem_size: ?*const anyopaque,
+    dynamic_smem_size: usize,
+    block_size_limit: c_int,
+) callconv(.c) c_int;
+
+// Stream Priority
+pub const StreamGetPriorityFn = *const fn (stream: Stream, priority: *c_int) callconv(.c) c_int;
+pub const StreamCreateWithPriorityFn = *const fn (stream: *Stream, flags: c_uint, priority: c_int) callconv(.c) c_int;
+pub const DeviceGetStreamPriorityRangeFn = *const fn (least_priority: *c_int, greatest_priority: *c_int) callconv(.c) c_int;
+
+// Cooperative Launch
+pub const LaunchCooperativeKernelFn = *const fn (
+    func: ?*const anyopaque,
+    grid_dim_x: c_uint,
+    grid_dim_y: c_uint,
+    grid_dim_z: c_uint,
+    block_dim_x: c_uint,
+    block_dim_y: c_uint,
+    block_dim_z: c_uint,
+    shared_mem_bytes: usize,
+    stream: Stream,
+    args: [*]?*anyopaque,
+) callconv(.c) c_int;
+
+// IPC
+pub const IpcMemHandle = [64]u8;
+pub const IpcGetMemHandleFn = *const fn (handle: *IpcMemHandle, devPtr: ?*anyopaque) callconv(.c) c_int;
+pub const IpcOpenMemHandleFn = *const fn (devPtr: *?*anyopaque, handle: IpcMemHandle, flags: c_uint) callconv(.c) c_int;
+pub const IpcCloseMemHandleFn = *const fn (devPtr: ?*anyopaque) callconv(.c) c_int;
+
 test "runtime ffi types compile" {
     // Verify that pointer and struct sizes are plausible.
     try std.testing.expect(@sizeOf(Stream) == @sizeOf(usize));

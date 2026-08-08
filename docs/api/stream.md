@@ -1,99 +1,63 @@
 ---
-title: Stream & Event API
-description: Async stream and event APIs, synchronisation, and timing in cuda.zig.
+title: Stream & Event API Documentation
+description: Reference for Stream, Event, stream priorities, and asynchronous execution in cuda.zig.
 ---
 
-# Stream & Event API
+# Stream & Event API Reference
 
-## `cuda.Stream`
+CUDA streams manage asynchronous work ordering and execution overlap.
 
-```zig
-pub const Stream = struct {
-    handle: cudaStream_t,
+## `Stream`
 
-    /// Create a new non-blocking CUDA stream.
-    pub fn init() !Stream
-
-    /// Destroy the stream (blocks until all pending work completes).
-    pub fn deinit(self: *Stream) void
-
-    /// Block the calling thread until all operations in this stream finish.
-    pub fn sync(self: Stream) !void
-
-    /// Non-blocking status check.
-    /// Returns true if all operations have completed.
-    pub fn query(self: Stream) !bool
-
-    /// Make this stream wait for `event` before executing subsequent work.
-    pub fn waitEvent(self: Stream, event: Event) !void
-
-    /// Return the raw handle for passing to CUDA C APIs.
-    pub fn raw(self: Stream) cudaStream_t
-};
-```
-
-## `cuda.Event`
+Handle representing a CUDA stream.
 
 ```zig
-pub const Event = struct {
-    handle: cudaEvent_t,
+const stream = try cuda.Stream.create();
+defer stream.destroy();
 
-    /// Create a CUDA event with default flags.
-    pub fn init() !Event
-
-    /// Create a CUDA event with explicit flags.
-    pub fn initFlags(flags: EventFlags) !Event
-
-    /// Destroy the event.
-    pub fn deinit(self: *Event) void
-
-    /// Record the event into a stream at the current position.
-    pub fn record(self: Event, stream: Stream) !void
-
-    /// Block the calling thread until this event has been recorded and all
-    /// preceding stream operations are complete.
-    pub fn sync(self: Event) !void
-
-    /// Non-blocking: true if the event has been recorded and completed.
-    pub fn query(self: Event) !bool
-
-    /// Compute elapsed time in milliseconds between two recorded events.
-    /// Both events must have completed.
-    pub fn elapsedMs(start: Event, stop: Event) !f32
-
-    /// Return the raw handle.
-    pub fn raw(self: Event) cudaEvent_t
-};
+try stream.synchronize();
 ```
 
-### `EventFlags`
+### Stream Methods & Functions
+
+| Function | Description |
+|----------|-------------|
+| `Stream.create()` | Create a new stream with default flags |
+| `Stream.createWithFlags(flags)` | Create stream with custom flags (e.g. non-blocking) |
+| `Stream.createWithPriority(flags, priority)` | Create stream with specific priority |
+| `stream.destroy()` | Release stream resources |
+| `stream.synchronize()` | Block host until stream completes all work |
+| `stream.query()` | Non-blocking check for stream completion |
+| `stream.waitEvent(event)` | Insert a stream-side wait on an event |
+| `stream.getPriority()` | Query priority integer of this stream |
+| `cuda.stream.getPriorityRange()` | Query device's `[least, greatest]` priority range |
+
+## `Event`
+
+CUDA events provide fine-grained timing and cross-stream synchronization.
 
 ```zig
-pub const EventFlags = packed struct {
-    /// If set, do not implicitly synchronise with the default stream.
-    disable_timing: bool = false,
-    /// For IPC event sharing (advanced).
-    interprocess: bool = false,
-    _pad: u30 = 0,
-};
+const start_evt = try cuda.Event.create();
+const end_evt = try cuda.Event.create();
+defer start_evt.destroy();
+defer end_evt.destroy();
+
+try start_evt.record(stream);
+// launch work...
+try end_evt.record(stream);
+try end_evt.synchronize();
+
+const elapsed_ms = try cuda.Event.elapsedTime(start_evt, end_evt);
 ```
 
-## Usage Pattern
+### Event Methods & Functions
 
-```zig
-var stream = try cuda.Stream.init();
-defer stream.deinit();
-
-var t0 = try cuda.Event.init();
-var t1 = try cuda.Event.init();
-defer t0.deinit();
-defer t1.deinit();
-
-try t0.record(stream);
-// ... enqueue GPU work on stream ...
-try t1.record(stream);
-try t1.sync();
-
-const ms = try cuda.Event.elapsedMs(t0, t1);
-std.debug.print("Elapsed: {d:.3} ms\n", .{ms});
-```
+| Function | Description |
+|----------|-------------|
+| `Event.create()` | Create timing event |
+| `Event.createWithFlags(flags)` | Create event with custom flags |
+| `event.destroy()` | Destroy event |
+| `event.record(stream)` | Record event in stream |
+| `event.synchronize()` | Block host until event is reached |
+| `event.query()` | Non-blocking query for event completion |
+| `Event.elapsedTime(start, end)` | Calculate elapsed milliseconds between events |

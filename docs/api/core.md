@@ -33,6 +33,8 @@ pub const CudaError = error{
     DriverError,
     RuntimeError,
     NvrtcError,
+    PoolError,      // stream-ordered pool allocation failed
+    OccupancyError, // occupancy query failed
     Unknown,
 };
 ```
@@ -82,3 +84,37 @@ fn checkDriver(code: c_int) !void
 ```
 
 All runtime and driver calls in cuda.zig pass through these helpers. On failure they emit a `std.log.debug` message and return the appropriate `CudaError`.
+
+## Profiler (`cuda.profiler`)
+
+High-precision wall-clock profiler for measuring CPU-side execution time. Uses `QueryPerformanceCounter` on Windows and `clock_gettime(CLOCK_MONOTONIC)` on POSIX — no dependency on `std.time`.
+
+```zig
+// Session markers (interacts with Nsight / nvprof)
+cuda.profiler.start();
+defer cuda.profiler.stop();
+
+// Scoped guard — automatically calls stop() on scope exit
+var guard = cuda.profiler.ProfilerGuard.begin();
+defer guard.end();
+```
+
+### Timing Functions
+
+```zig
+/// Returns current wall-clock time in nanoseconds (platform-native precision).
+pub fn nowNs() u64
+
+/// Returns elapsed milliseconds between two nowNs() readings.
+pub fn elapsedMs(start_ns: u64, end_ns: u64) f64
+```
+
+Example:
+
+```zig
+const t0 = cuda.profiler.nowNs();
+// ... work ...
+const elapsed = cuda.profiler.elapsedMs(t0, cuda.profiler.nowNs());
+std.debug.print("Elapsed: {d:.3} ms\n", .{elapsed});
+```
+

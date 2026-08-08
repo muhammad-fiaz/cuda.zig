@@ -20,7 +20,7 @@ Add to your `build.zig.zon`:
 ```zig
 .dependencies = .{
     .cuda = .{
-        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.1.tar.gz",
+        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz",
         .hash = "<run zig fetch to get hash>",
     },
 },
@@ -29,7 +29,7 @@ Add to your `build.zig.zon`:
 Or use `zig fetch` to populate the hash automatically:
 
 ```sh
-zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.1.tar.gz
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz
 ```
 
 ## Development / Nightly

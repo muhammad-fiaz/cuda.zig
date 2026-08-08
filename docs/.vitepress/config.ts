@@ -11,7 +11,7 @@ export const GTM_ID = "GTM-P4M9T8ZR";
 export const ADSENSE_CLIENT_ID = "ca-pub-2040560600290490";
 
 export const KEYWORDS =
-  "zig, cuda, gpu, nvidia, nvrtc, device memory, streams, events, tensors, matmul, fallback, parallel computing, cuda runtime, driver api";
+  "zig, cuda, gpu, nvidia, nvrtc, device memory, streams, events, tensors, matmul, fallback, parallel computing, cuda runtime, driver api, memory pools, occupancy, n-body benchmark, gpu speedup";
 
 export default defineConfig({
   lang: "en-US",
@@ -175,7 +175,7 @@ export default defineConfig({
         programmingLanguage: "Zig",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         downloadUrl: "https://github.com/muhammad-fiaz/cuda.zig",
-        softwareVersion: "0.0.1",
+        softwareVersion: "0.0.2",
         license: "https://opensource.org/licenses/MIT",
       });
     } else {
@@ -252,6 +252,7 @@ export default defineConfig({
           items: [
             { text: "Device Management", link: "/guide/device-management" },
             { text: "Memory Buffers", link: "/guide/memory-buffers" },
+            { text: "Memory Pools", link: "/guide/memory-buffers#memory-pools" },
             { text: "Streams & Events", link: "/guide/streams-events" },
             { text: "Kernel Launch", link: "/guide/kernel-launch" },
             { text: "NVRTC Compilation", link: "/guide/nvrtc" },
@@ -260,6 +261,7 @@ export default defineConfig({
             { text: "Tensor Operations", link: "/guide/tensor-ops" },
             { text: "CUDA Allocator", link: "/guide/allocator" },
             { text: "Version Compatibility", link: "/guide/version-compat" },
+            { text: "Benchmarking", link: "/examples/12-benchmark-matrix-ops" },
             { text: "Related Projects", link: "/guide/related-projects" },
           ],
         },
@@ -294,6 +296,10 @@ export default defineConfig({
             { text: "07 — CPU Fallback", link: "/examples/07-cpu-fallback" },
             { text: "08 — Managed Memory", link: "/examples/08-managed-memory" },
             { text: "09 — NVRTC Compilation", link: "/examples/09-nvrtc-compilation" },
+            { text: "10 — Memory Pools & 2D Pitched", link: "/examples/10-memory-pools-pitched" },
+            { text: "11 — Occupancy & Profiler", link: "/examples/11-occupancy-profiler" },
+            { text: "12 — CPU vs GPU Benchmark", link: "/examples/12-benchmark-matrix-ops" },
+            { text: "13 — N-D Tensor Ops", link: "/examples/13-ndarray-tensor-ops" },
           ],
         },
       ],

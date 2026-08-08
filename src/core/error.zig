@@ -606,6 +606,7 @@ pub fn fromRuntimeResult(code: c_int) CudaError!void {
         910 => error.GraphExecUpdateFailure, // cudaErrorGraphExecUpdateFailure
         911 => error.ExternalDevice, // cudaErrorExternalDevice
         912 => error.InvalidClusterSize, // cudaErrorInvalidClusterSize
+        101 => error.NotSupported, // cudaErrorNotSupported
         999 => error.Unknown, // cudaErrorUnknown
         else => error.Unknown,
     };
