@@ -23,7 +23,13 @@ export default defineConfig({
   cleanUrls: false,
 
   sitemap: {
-    hostname: SITE_URL,
+    // A trailing slash is required: VitePress resolves each page URL with
+    // `new URL(page, hostname)`, so the last path segment of a hostname
+    // without a trailing slash is dropped (treated as a file, not a dir).
+    hostname: `${SITE_URL}/`,
+    // Unused namespaces are omitted; only the default sitemap 0.9 namespace
+    // is emitted since no news/image/video/xhtml:lang entries are generated.
+    xmlns: { news: false, video: false, xhtml: false, image: false },
   },
 
   vite: {
@@ -61,8 +67,9 @@ export default defineConfig({
     ["meta", { name: "twitter:site", content: "@muhammadfiaz_" }],
     ["meta", { name: "twitter:creator", content: "@muhammadfiaz_" }],
 
-    // Canonical
-    ["link", { rel: "canonical", href: SITE_URL }],
+    // Canonical URLs are injected per page by transformPageData below.
+    // (A global canonical here would duplicate them on every page and
+    //  incorrectly point all of them to the site root.)
 
     // Favicon
     ["link", { rel: "icon", href: "/cuda.zig/favicon.png", type: "image/png" }],
