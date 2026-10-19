@@ -11,7 +11,7 @@ cuda.zig is a production-grade Zig library that wraps the CUDA Runtime and Drive
 
 | Requirement | Version |
 |---|---|
-| [Zig](https://ziglang.org/download/) | 0.16.0 or newer |
+| [Zig](https://ziglang.org/download/) | 0.17.0 or newer |
 | CUDA Toolkit *(optional)* | 12.x or 13.x (13.3 Update 1 recommended) |
 | GPU *(optional)* | Any NVIDIA GPU with compute capability 5.0+ |
 
@@ -21,9 +21,22 @@ Without a GPU or CUDA Toolkit, cuda.zig automatically falls back to a transparen
 
 ### Stable (via `zig fetch`)
 
+For **Zig 0.17**:
+
 ```sh
-zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz
 ```
+
+For **Zig 0.16** (previous release):
+
+```sh
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz
+```
+
+| Zig version | cuda.zig tag |
+|---|---|
+| 0.17.0+ | `0.0.3` |
+| 0.16.0 | `0.0.2` |
 
 ### Development / Nightly (directly from GitHub)
 
@@ -38,7 +51,7 @@ After running `zig fetch`, your `build.zig.zon` will contain an entry like:
 ```zig
 .dependencies = .{
     .cuda = .{
-        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz",
+        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz",
         .hash = "<sha256 printed by zig fetch>",
     },
 },
@@ -68,7 +81,7 @@ pub fn main() !void {
     std.debug.print("Running on: {s}\n", .{dev.name()});
 
     // Allocate device memory and copy a slice to the GPU
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     const host_data = [_]f32{ 1, 2, 3, 4, 5, 6, 7, 8 };

@@ -16,7 +16,7 @@ const std = @import("std");
 const cuda = @import("cuda");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     try cuda.init();
@@ -75,5 +75,5 @@ Memory advice set.
 ## Run
 
 ```sh
-zig build example-08
+zig build example-managed-memory
 ```

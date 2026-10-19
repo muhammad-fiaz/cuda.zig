@@ -16,7 +16,7 @@ const std = @import("std");
 const cuda = @import("cuda");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     try cuda.init();
@@ -73,5 +73,5 @@ Data integrity: PASS
 ## Run
 
 ```sh
-zig build example-02
+zig build example-memory-transfer
 ```

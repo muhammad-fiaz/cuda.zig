@@ -117,7 +117,7 @@ fn openWithCudaPath(dll_name: []const u8) ?LibHandle {
         const cuda_path = env_buf[0..cuda_path_len];
         var candidate: [768:0]u8 = undefined;
         const sep = if (cuda_path[cuda_path.len - 1] == '\\') "" else "\\";
-        if (std.fmt.bufPrintZ(&candidate, "{s}{s}bin\\{s}", .{ cuda_path, sep, dll_name })) |joined| {
+        if (std.fmt.bufPrintSentinel(&candidate, "{s}{s}bin\\{s}", .{ cuda_path, sep, dll_name }, 0)) |joined| {
             if (platformOpen(joined)) |h| return h;
         } else |_| {}
     }
@@ -126,13 +126,13 @@ fn openWithCudaPath(dll_name: []const u8) ?LibHandle {
     for (cuda_major_versions) |maj| {
         for (cuda_minor_versions) |min| {
             var var_name_buf: [64:0]u8 = undefined;
-            const var_name = std.fmt.bufPrintZ(&var_name_buf, "CUDA_PATH_V{s}_{s}", .{ maj, min }) catch continue;
+            const var_name = std.fmt.bufPrintSentinel(&var_name_buf, "CUDA_PATH_V{s}_{s}", .{ maj, min }, 0) catch continue;
             const len = GetEnvironmentVariableA(var_name.ptr, &env_buf, env_buf.len);
             if (len > 0 and len < env_buf.len) {
                 const path_val = env_buf[0..len];
                 var candidate: [768:0]u8 = undefined;
                 const sep = if (path_val[path_val.len - 1] == '\\') "" else "\\";
-                if (std.fmt.bufPrintZ(&candidate, "{s}{s}bin\\{s}", .{ path_val, sep, dll_name })) |joined| {
+                if (std.fmt.bufPrintSentinel(&candidate, "{s}{s}bin\\{s}", .{ path_val, sep, dll_name }, 0)) |joined| {
                     if (platformOpen(joined)) |h| return h;
                 } else |_| {}
             }

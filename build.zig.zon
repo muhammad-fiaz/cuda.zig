@@ -1,8 +1,8 @@
 .{
     .name = .cuda,
-    .version = "0.0.2",
+    .version = "0.0.3",
     .fingerprint = 0x61c9d2274fd46b30,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{},
     .paths = .{
         "build.zig",

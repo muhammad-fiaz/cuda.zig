@@ -67,7 +67,7 @@ pub fn beginCapture(stream: stream_mod.Stream, mode: StreamCaptureMode) err.Cuda
         return;
     }
     const func = loader.globalLoader().getRuntimeSymbol(*const fn (*anyopaque, c_uint) callconv(.c) c_int, "cudaStreamBeginCapture") orelse return error.DriverError;
-    try result.checkRuntime(func(stream.raw(), @intFromEnum(mode)));
+    try result.checkRuntime(func(stream.raw(), @backingInt(mode)));
 }
 
 /// Ends stream capture on `stream` and returns the constructed `Graph`.

@@ -24,7 +24,7 @@ Shape is a comptime-known or runtime tuple of `usize`.
 ## Filling from Host
 
 ```zig
-const data = [_]f32{1.0} ** 1024;
+const data: [1024]f32 = @splat(1.0);
 try t.copyFromHost(&data);
 ```
 

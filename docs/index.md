@@ -9,7 +9,7 @@ description: >
 hero:
   name: cuda.zig
   text: GPU Computing for Zig
-  tagline: Production-grade CUDA Runtime API with zero link-time dependencies, automatic CPU fallback, memory pools, occupancy profiling, and full Zig 0.16 support.
+  tagline: Production-grade CUDA Runtime API with zero link-time dependencies, automatic CPU fallback, memory pools, occupancy profiling, and full Zig 0.17 support.
   image:
     src: /favicon.png
     alt: cuda.zig logo

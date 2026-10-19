@@ -16,7 +16,7 @@ pub const DeviceProperties = props_mod.DeviceProperties;
 
 /// Thread-local storage for the device name string. This lets `name()` return
 /// a slice that remains valid across the function boundary.
-var tls_name_buf: [256]u8 = [_]u8{0} ** 256;
+var tls_name_buf: [256]u8 = @splat(0);
 
 /// A handle to a specific CUDA device identified by its ordinal index.
 ///

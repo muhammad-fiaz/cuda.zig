@@ -96,7 +96,7 @@ pub fn memsetAsync(ptr: *anyopaque, value: u8, count: usize, stream: ffi.Stream)
 pub fn memcpyHostToDevice(dst: *anyopaque, src: *const anyopaque, count: usize) err.CudaError!void {
     const ldr = loader.globalLoader();
     if (ldr.getRuntimeSymbol(ffi.MemcpyFn, "cudaMemcpy")) |f| {
-        try result.checkRuntime(f(dst, src, count, @intFromEnum(ffi.MemcpyKind.host_to_device)));
+        try result.checkRuntime(f(dst, src, count, @backingInt(ffi.MemcpyKind.host_to_device)));
         return;
     }
     if (ldr.getDriverSymbol(*const fn (u64, *const anyopaque, usize) callconv(.c) c_int, "cuMemcpyHtoD_v2")) |f| {
@@ -112,7 +112,7 @@ pub fn memcpyHostToDevice(dst: *anyopaque, src: *const anyopaque, count: usize) 
 pub fn memcpyDeviceToHost(dst: *anyopaque, src: *const anyopaque, count: usize) err.CudaError!void {
     const ldr = loader.globalLoader();
     if (ldr.getRuntimeSymbol(ffi.MemcpyFn, "cudaMemcpy")) |f| {
-        try result.checkRuntime(f(dst, src, count, @intFromEnum(ffi.MemcpyKind.device_to_host)));
+        try result.checkRuntime(f(dst, src, count, @backingInt(ffi.MemcpyKind.device_to_host)));
         return;
     }
     if (ldr.getDriverSymbol(*const fn (*anyopaque, u64, usize) callconv(.c) c_int, "cuMemcpyDtoH_v2")) |f| {
@@ -128,7 +128,7 @@ pub fn memcpyDeviceToHost(dst: *anyopaque, src: *const anyopaque, count: usize) 
 pub fn memcpyDeviceToDevice(dst: *anyopaque, src: *const anyopaque, count: usize) err.CudaError!void {
     const ldr = loader.globalLoader();
     if (ldr.getRuntimeSymbol(ffi.MemcpyFn, "cudaMemcpy")) |f| {
-        try result.checkRuntime(f(dst, src, count, @intFromEnum(ffi.MemcpyKind.device_to_device)));
+        try result.checkRuntime(f(dst, src, count, @backingInt(ffi.MemcpyKind.device_to_device)));
         return;
     }
     if (ldr.getDriverSymbol(*const fn (u64, u64, usize) callconv(.c) c_int, "cuMemcpyDtoD_v2")) |f| {
@@ -157,7 +157,7 @@ pub fn memcpyHostToDeviceAsync(
     const ldr = loader.globalLoader();
     const f = ldr.getRuntimeSymbol(ffi.MemcpyAsyncFn, "cudaMemcpyAsync") orelse
         return error.NotInitialized;
-    try result.checkRuntime(f(dst, src, count, @intFromEnum(ffi.MemcpyKind.host_to_device), stream));
+    try result.checkRuntime(f(dst, src, count, @backingInt(ffi.MemcpyKind.host_to_device), stream));
 }
 
 /// Enqueues an asynchronous device-to-host transfer on `stream`.
@@ -173,7 +173,7 @@ pub fn memcpyDeviceToHostAsync(
     const ldr = loader.globalLoader();
     const f = ldr.getRuntimeSymbol(ffi.MemcpyAsyncFn, "cudaMemcpyAsync") orelse
         return error.NotInitialized;
-    try result.checkRuntime(f(dst, src, count, @intFromEnum(ffi.MemcpyKind.device_to_host), stream));
+    try result.checkRuntime(f(dst, src, count, @backingInt(ffi.MemcpyKind.device_to_host), stream));
 }
 
 /// Enqueues an asynchronous device-to-device transfer on `stream`.
@@ -186,7 +186,7 @@ pub fn memcpyDeviceToDeviceAsync(
     const ldr = loader.globalLoader();
     const f = ldr.getRuntimeSymbol(ffi.MemcpyAsyncFn, "cudaMemcpyAsync") orelse
         return error.NotInitialized;
-    try result.checkRuntime(f(dst, src, count, @intFromEnum(ffi.MemcpyKind.device_to_device), stream));
+    try result.checkRuntime(f(dst, src, count, @backingInt(ffi.MemcpyKind.device_to_device), stream));
 }
 
 /// Allocates `size` bytes of page-locked (pinned) host memory.
@@ -299,7 +299,7 @@ pub fn memAdvise(ptr: *const anyopaque, count: usize, advice: ffi.MemAdvise, dev
     const ldr = loader.globalLoader();
     const f = ldr.getRuntimeSymbol(ffi.MemAdviseFn, "cudaMemAdvise") orelse
         return error.NotInitialized;
-    try result.checkRuntime(f(ptr, count, @intFromEnum(advice), @intCast(device)));
+    try result.checkRuntime(f(ptr, count, @backingInt(advice), @intCast(device)));
 }
 
 // Async Memory Pool APIs
@@ -388,7 +388,7 @@ pub fn memcpy2D(
     const ldr = loader.globalLoader();
     const f = ldr.getRuntimeSymbol(ffi.Memcpy2DFn, "cudaMemcpy2D") orelse
         return error.NotInitialized;
-    try result.checkRuntime(f(dst, dpitch, src, spitch, width, height, @intFromEnum(kind)));
+    try result.checkRuntime(f(dst, dpitch, src, spitch, width, height, @backingInt(kind)));
 }
 
 /// Asynchronous 2-D memcpy on the given stream.
@@ -405,7 +405,7 @@ pub fn memcpy2DAsync(
     const ldr = loader.globalLoader();
     const f = ldr.getRuntimeSymbol(ffi.Memcpy2DAsyncFn, "cudaMemcpy2DAsync") orelse
         return error.NotInitialized;
-    try result.checkRuntime(f(dst, dpitch, src, spitch, width, height, @intFromEnum(kind), stream));
+    try result.checkRuntime(f(dst, dpitch, src, spitch, width, height, @backingInt(kind), stream));
 }
 
 // IPC Memory (inter-process GPU memory sharing)

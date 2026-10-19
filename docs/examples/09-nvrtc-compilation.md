@@ -23,7 +23,7 @@ const kernel_src =
 ;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     try cuda.init();
@@ -102,7 +102,7 @@ y[100] = 301.0  (expected 301.0)
 ## Run
 
 ```sh
-zig build example-09
+zig build example-nvrtc-compilation
 ```
 
 > [!NOTE]

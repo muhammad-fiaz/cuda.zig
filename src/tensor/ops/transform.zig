@@ -51,7 +51,7 @@ pub fn slice(
     if (starts.len != ndim or ends.len != ndim) return error.InvalidValue;
 
     // Validate ranges and compute output shape
-    var out_dims: [8]usize = [_]usize{1} ** 8;
+    var out_dims: [8]usize = @splat(1);
     var out_total: usize = 1;
     for (0..ndim) |i| {
         if (ends[i] > in_dims[i] or starts[i] >= ends[i]) return error.InvalidValue;
@@ -61,7 +61,7 @@ pub fn slice(
     if (dst.len != out_total) return error.InvalidValue;
 
     // Compute input strides
-    var in_strides = [_]usize{0} ** 8;
+    var in_strides: [8]usize = @splat(0);
     {
         var st: usize = 1;
         var i: usize = ndim;
@@ -73,7 +73,7 @@ pub fn slice(
     }
 
     // Iterate output positions
-    var idx = [_]usize{0} ** 8;
+    var idx: [8]usize = @splat(0);
     for (dst) |*elem| {
         // Compute src flat index = starts[i] + idx[i] along each dim
         var src_flat: usize = 0;
@@ -114,14 +114,14 @@ pub fn concat(
     }
 
     // Build output dims
-    var out_dims = [_]usize{0} ** 8;
+    var out_dims: [8]usize = @splat(0);
     for (0..ndim) |i| out_dims[i] = a_dims[i];
     out_dims[axis] += b_dims[axis];
 
     // Compute strides
-    var a_strides = [_]usize{0} ** 8;
-    var b_strides = [_]usize{0} ** 8;
-    var out_strides = [_]usize{0} ** 8;
+    var a_strides: [8]usize = @splat(0);
+    var b_strides: [8]usize = @splat(0);
+    var out_strides: [8]usize = @splat(0);
     {
         var st: usize = 1;
         var i: usize = ndim;
@@ -155,7 +155,7 @@ pub fn concat(
     for (out_dims[0..ndim]) |d| out_total *= d;
     if (dst.len != out_total) return error.InvalidValue;
 
-    var idx = [_]usize{0} ** 8;
+    var idx: [8]usize = @splat(0);
     for (dst) |*elem| {
         const axis_idx = idx[axis];
         if (axis_idx < a_dims[axis]) {

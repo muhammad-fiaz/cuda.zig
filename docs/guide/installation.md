@@ -7,7 +7,7 @@ description: All installation methods for cuda.zig — stable release, nightly, 
 
 ## Requirements
 
-- **Zig 0.16.0** or newer ([download](https://ziglang.org/download/))
+- **Zig 0.17.0** or newer ([download](https://ziglang.org/download/))
 - **CUDA Toolkit 12.x – 13.x** *(optional)* — only needed at runtime on a machine with an NVIDIA GPU
 - **NVIDIA driver** *(optional)* — for GPU execution
 
@@ -15,12 +15,12 @@ cuda.zig compiles without CUDA present. The dynamic loader resolves `libcuda.so`
 
 ## Stable Release
 
-Add to your `build.zig.zon`:
+For **Zig 0.17**, add cuda.zig **0.0.3** to your `build.zig.zon`:
 
 ```zig
 .dependencies = .{
     .cuda = .{
-        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz",
+        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz",
         .hash = "<run zig fetch to get hash>",
     },
 },
@@ -29,8 +29,20 @@ Add to your `build.zig.zon`:
 Or use `zig fetch` to populate the hash automatically:
 
 ```sh
-zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/v0.0.2.tar.gz
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz
 ```
+
+> [!NOTE]
+> Still on **Zig 0.16.x**? Pin the previous release instead:
+>
+> ```sh
+> zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz
+> ```
+>
+> | Zig version | cuda.zig tag |
+> |---|---|
+> | 0.17.0+ | `0.0.3` |
+> | 0.16.0 | `0.0.2` |
 
 ## Development / Nightly
 
@@ -79,9 +91,9 @@ zig build -Denable_nvrtc=true -Denable_cublas=true -Doptimize=ReleaseFast
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
 RUN apt-get update && apt-get install -y wget xz-utils
-RUN wget -q https://ziglang.org/download/0.16.0/zig-linux-x86_64-0.16.0.tar.xz \
-    && tar -xf zig-linux-x86_64-0.16.0.tar.xz -C /opt \
-    && ln -s /opt/zig-linux-x86_64-0.16.0/zig /usr/local/bin/zig
+RUN wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz \
+    && tar -xf zig-x86_64-linux-0.17.0.tar.xz -C /opt \
+    && ln -s /opt/zig-x86_64-linux-0.17.0/zig /usr/local/bin/zig
 
 WORKDIR /app
 COPY . .
@@ -94,9 +106,9 @@ RUN zig build -Doptimize=ReleaseFast
 FROM nvidia/cuda:13.3.1-cudnn-devel-ubuntu24.04
 
 RUN apt-get update && apt-get install -y wget xz-utils
-RUN wget -q https://ziglang.org/download/0.16.0/zig-linux-x86_64-0.16.0.tar.xz \
-    && tar -xf zig-linux-x86_64-0.16.0.tar.xz -C /opt \
-    && ln -s /opt/zig-linux-x86_64-0.16.0/zig /usr/local/bin/zig
+RUN wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz \
+    && tar -xf zig-x86_64-linux-0.17.0.tar.xz -C /opt \
+    && ln -s /opt/zig-x86_64-linux-0.17.0/zig /usr/local/bin/zig
 
 WORKDIR /app
 COPY . .

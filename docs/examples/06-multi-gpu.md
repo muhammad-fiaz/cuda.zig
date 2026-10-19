@@ -16,7 +16,7 @@ const std = @import("std");
 const cuda = @import("cuda");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     try cuda.init();
@@ -84,5 +84,5 @@ result[42] = 42.0
 ## Run
 
 ```sh
-zig build example-06
+zig build example-multi-gpu
 ```

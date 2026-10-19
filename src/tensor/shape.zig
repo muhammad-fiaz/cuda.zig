@@ -15,7 +15,7 @@ pub const Shape = struct {
     /// Build a Shape from a slice of dimension sizes.
     pub fn init(shape_slice: []const usize) !Shape {
         if (shape_slice.len == 0 or shape_slice.len > MAX_DIMS) return error.InvalidValue;
-        var s = Shape{ .dims = [_]usize{0} ** MAX_DIMS, .ndim = shape_slice.len };
+        var s = Shape{ .dims = @splat(0), .ndim = shape_slice.len };
         @memcpy(s.dims[0..shape_slice.len], shape_slice);
         return s;
     }
@@ -54,7 +54,7 @@ pub const Shape = struct {
     /// a dimension of 1 is expandable to match the corresponding size.
     pub fn broadcastWith(self: Shape, other: Shape) !Shape {
         const out_ndim = @max(self.ndim, other.ndim);
-        var out = Shape{ .dims = [_]usize{0} ** MAX_DIMS, .ndim = out_ndim };
+        var out = Shape{ .dims = @splat(0), .ndim = out_ndim };
         var i: usize = 0;
         while (i < out_ndim) : (i += 1) {
             const ri = out_ndim - 1 - i; // index from right
@@ -77,7 +77,7 @@ pub const Shape = struct {
     /// `perm` must be a permutation of [0, ndim).
     pub fn permute(self: Shape, perm: []const usize) !Shape {
         if (perm.len != self.ndim) return error.InvalidValue;
-        var out = Shape{ .dims = [_]usize{0} ** MAX_DIMS, .ndim = self.ndim };
+        var out = Shape{ .dims = @splat(0), .ndim = self.ndim };
         for (perm, 0..) |axis, i| {
             if (axis >= self.ndim) return error.InvalidValue;
             out.dims[i] = self.dims[axis];

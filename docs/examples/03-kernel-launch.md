@@ -29,7 +29,7 @@ const cuda = @import("cuda");
 const ptx = @embedFile("scale.ptx");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     try cuda.init();
@@ -90,5 +90,5 @@ result[65535] = 131070
 
 ```sh
 nvcc -ptx examples/scale.cu -o examples/scale.ptx
-zig build example-03
+zig build example-kernel-launch
 ```

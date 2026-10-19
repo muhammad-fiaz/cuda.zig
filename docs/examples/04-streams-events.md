@@ -16,7 +16,7 @@ const std = @import("std");
 const cuda = @import("cuda");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     try cuda.init();
@@ -78,5 +78,5 @@ Cross-stream sync: OK
 ## Run
 
 ```sh
-zig build example-04
+zig build example-streams-events
 ```

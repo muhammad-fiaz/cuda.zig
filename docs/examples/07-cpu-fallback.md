@@ -16,7 +16,7 @@ const std = @import("std");
 const cuda = @import("cuda");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
 
     // Force fallback mode for demonstration
@@ -55,7 +55,7 @@ Sum: 400.0
 ## Run
 
 ```sh
-zig build example-07
+zig build example-cpu-fallback
 # Or force via environment variable:
 CUDA_ZIG_FORCE_FALLBACK=1 zig build run
 ```

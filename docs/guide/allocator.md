@@ -21,7 +21,7 @@ const slice = try allocator.alloc(f32, 1024);
 defer allocator.free(slice);
 
 // Pass to any allocator-aware code
-var list = try std.ArrayListUnmanaged(f32).initCapacity(allocator, 512);
+var list = try std.ArrayList(f32).initCapacity(allocator, 512);
 defer list.deinit(allocator);
 ```
 

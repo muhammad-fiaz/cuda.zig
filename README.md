@@ -3,7 +3,7 @@
 # CUDA.Zig
     
 <a href="https://muhammad-fiaz.github.io/cuda.zig/"><img src="https://img.shields.io/badge/docs-muhammad--fiaz.github.io-blue" alt="Documentation"></a>
-<a href="https://ziglang.org/"><img src="https://img.shields.io/badge/Zig-0.16.0-orange.svg?logo=zig" alt="Zig Version"></a>
+<a href="https://ziglang.org/"><img src="https://img.shields.io/badge/Zig-0.17.0-orange.svg?logo=zig" alt="Zig Version"></a>
 <a href="https://github.com/muhammad-fiaz/cuda.zig"><img src="https://img.shields.io/github/stars/muhammad-fiaz/cuda.zig" alt="GitHub stars"></a>
 <a href="https://github.com/muhammad-fiaz/cuda.zig/issues"><img src="https://img.shields.io/github/issues/muhammad-fiaz/cuda.zig" alt="GitHub issues"></a>
 <a href="https://github.com/muhammad-fiaz/cuda.zig/pulls"><img src="https://img.shields.io/github/issues-pr/muhammad-fiaz/cuda.zig" alt="GitHub pull requests"></a>
@@ -96,7 +96,7 @@ Before using `cuda.zig`, ensure you have the following:
 
 | Requirement | Version | Notes |
 |-------------|---------|-------|
-| **Zig** | 0.16.0+ | Download from [ziglang.org](https://ziglang.org/download/) |
+| **Zig** | 0.17.0+ | Download from [ziglang.org](https://ziglang.org/download/) |
 | **Operating System** | Windows 10+, Linux, macOS | Cross-platform GPU computing |
 | **CUDA Driver (Optional)** | 12.0 - 13.4 | Optional runtime dependency; falls back to CPU if absent |
 
@@ -132,11 +132,22 @@ zig build -Dtarget=x86_64-windows
 
 ### Method 1: Zig Fetch (Recommended)
 
-**Latest Release (v0.0.2)**
+For **Zig 0.17** — **Latest Release (v0.0.3)**:
+
+```bash
+zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz
+```
+
+Still on **Zig 0.16**? Use the compatible previous release **v0.0.2**:
 
 ```bash
 zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz
 ```
+
+| Zig version | cuda.zig tag |
+|---|---|
+| 0.17.0+ | `0.0.3` |
+| 0.16.0 | `0.0.2` |
 
 ### Method 2: Zig Fetch (Development / Nightly)
 
@@ -153,7 +164,7 @@ Add the dependency to your `build.zig.zon` file.
 ```zig
 .dependencies = .{
     .cuda = .{
-        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz",
+        .url = "https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz",
         .hash = "...", // Run `zig fetch --save <url>` to generate the hash.
     },
 },

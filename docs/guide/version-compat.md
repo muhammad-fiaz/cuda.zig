@@ -7,9 +7,10 @@ description: CUDA Toolkit version compatibility, minimum compute capabilities, a
 
 ## Zig Compiler
 
-| cuda.zig | Minimum Zig |
-|---|---|
-| 0.0.x | 0.16.0 |
+| cuda.zig | Minimum Zig | Install |
+|---|---|---|
+| 0.0.3 | 0.17.0 | `zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.3.tar.gz` |
+| 0.0.2 | 0.16.0 | `zig fetch --save https://github.com/muhammad-fiaz/cuda.zig/archive/refs/tags/0.0.2.tar.gz` |
 
 ## CUDA Toolkit & Driver
 
@@ -17,6 +18,7 @@ cuda.zig dynamically probes and resolves CUDA symbols at runtime with zero link-
 
 | cuda.zig | Supported CUDA Versions | Minimum Driver | cuDNN |
 |---|---|---|---|
+| 0.0.3 | CUDA 11.0 – 13.4 (Major 11, 12, 13; Minor 0–9 probe loop) | 525.60+ | Optional |
 | 0.0.2 | CUDA 11.0 – 13.4 (Major 11, 12, 13; Minor 0–9 probe loop) | 525.60+ | Optional |
 
 **Latest validated environment:** CUDA Toolkit 13.3 Update 1 (`nvidia/cuda:13.3.1-cudnn-devel`), Driver 572.16 (Windows 11 x86_64, RTX 4070 SUPER Compute Capability 8.9).

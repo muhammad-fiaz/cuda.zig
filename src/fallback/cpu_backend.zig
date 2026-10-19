@@ -144,9 +144,9 @@ pub fn broadcastElementwise(
     const ndim = out_dims.len;
 
     // Compute row-major strides for each operand's own dims
-    var a_strides = [_]usize{0} ** 8;
-    var b_strides = [_]usize{0} ** 8;
-    var out_strides = [_]usize{0} ** 8;
+    var a_strides: [8]usize = @splat(0);
+    var b_strides: [8]usize = @splat(0);
+    var out_strides: [8]usize = @splat(0);
 
     {
         var st: usize = 1;
@@ -177,7 +177,7 @@ pub fn broadcastElementwise(
     }
 
     // Mixed-radix counter over output shape
-    var idx = [_]usize{0} ** 8;
+    var idx: [8]usize = @splat(0);
     for (out) |*elem| {
         // Compute flat src indices with broadcast (stride = 0 on size-1 dims)
         var a_flat: usize = 0;
@@ -229,7 +229,7 @@ pub fn transposeND(
     std.debug.assert(perm.len == ndim);
 
     // Input strides (row-major)
-    var in_strides = [_]usize{0} ** 8;
+    var in_strides: [8]usize = @splat(0);
     {
         var st: usize = 1;
         var i: usize = ndim;
@@ -241,12 +241,12 @@ pub fn transposeND(
     }
 
     // Output dims and strides
-    var out_dims = [_]usize{0} ** 8;
+    var out_dims: [8]usize = @splat(0);
     for (perm, 0..) |axis, i| out_dims[i] = in_dims[axis];
     // out_strides not needed — we iterate via the mixed-radix counter
 
     // Iterate output positions
-    var idx = [_]usize{0} ** 8;
+    var idx: [8]usize = @splat(0);
     for (dst) |*elem| {
         // Map output idx -> source flat index via perm
         var src_flat: usize = 0;
@@ -310,7 +310,7 @@ pub fn reduceAlongAxis(
     std.debug.assert(axis < ndim);
 
     // Input strides
-    var in_strides = [_]usize{0} ** 8;
+    var in_strides: [8]usize = @splat(0);
     {
         var st: usize = 1;
         var i: usize = ndim;
@@ -322,7 +322,7 @@ pub fn reduceAlongAxis(
     }
 
     // Output strides (input dims with axis removed)
-    var out_dims = [_]usize{0} ** 8;
+    var out_dims: [8]usize = @splat(0);
     var out_ndim: usize = 0;
     for (0..ndim) |i| {
         if (i != axis) {
@@ -334,7 +334,7 @@ pub fn reduceAlongAxis(
         out_ndim = 1;
         out_dims[0] = 1;
     }
-    var out_strides2 = [_]usize{0} ** 8;
+    var out_strides2: [8]usize = @splat(0);
     {
         var st: usize = 1;
         var i: usize = out_ndim;
@@ -352,7 +352,7 @@ pub fn reduceAlongAxis(
     var in_total: usize = 1;
     for (in_dims) |d| in_total *= d;
 
-    var idx = [_]usize{0} ** 8;
+    var idx: [8]usize = @splat(0);
     for (0..in_total) |_| {
         // Compute dst flat index by projecting idx onto output (skip axis dim)
         var dst_flat: usize = 0;

@@ -4,117 +4,121 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, dev]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  ZIG_VERSION: 0.17.0
 
 jobs:
-  lint:
-    name: Lint
+  verify:
+    name: fmt, native tests, examples
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
+      - uses: actions/checkout@v7
+      - uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
+          version: ${{ env.ZIG_VERSION }}
+      - name: Check formatting
+        run: zig fmt --check src/ examples/ build.zig build.zig.zon
+      - name: Test
+        run: zig build test --summary all
+      - name: Test optimized
+        run: zig build test -Doptimize=ReleaseSafe --summary all
+      - name: Examples
+        run: zig build run-all-examples
 
-      - name: Format check
-        run: zig fmt --check src/ examples/ build.zig
+  test-linux:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: x86_64-linux,       target: x86_64-linux-gnu,       optimize: Debug,       qemu: false }
+          - { name: aarch64-linux,      target: aarch64-linux-musl,     optimize: Debug,       qemu: true }
+          - { name: x86-linux,          target: x86-linux-musl,         optimize: Debug,       qemu: true }
+          - { name: x86-linux-safe,     target: x86-linux-musl,         optimize: ReleaseSafe, qemu: true }
+          - { name: arm-linux,          target: arm-linux-musleabihf,   optimize: Debug,       qemu: true }
+          - { name: arm-linux-safe,     target: arm-linux-musleabihf,   optimize: ReleaseSafe, qemu: true }
+          - { name: thumb-linux,        target: thumb-linux-musleabihf, optimize: Debug,       qemu: true }
+          - { name: riscv32-linux,      target: riscv32-linux-musl,     optimize: Debug,       qemu: true }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+          cache-key: ${{ matrix.target }}-${{ matrix.optimize }}
+      - name: Install QEMU
+        if: matrix.qemu
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends qemu-user
+          qemu-arm --version
+          qemu-aarch64 --version
+          qemu-riscv32 --version
+      - run: >-
+          zig build test
+          -Dtarget=${{ matrix.target }}
+          -Doptimize=${{ matrix.optimize }}
+          ${{ matrix.qemu && '-fqemu' || '' }} --summary all
 
-  test:
-    name: Test (${{ matrix.name }})
+  test-windows:
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: x86-windows,    target: x86-windows,    os: windows-latest }
+          - { name: x86_64-windows, target: x86_64-windows, os: windows-latest }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+          cache-key: ${{ matrix.target }}
+      - run: zig build test -Dtarget=${{ matrix.target }} --summary all
+
+  test-macos:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: aarch64-macos, target: aarch64-macos, os: macos-latest }
+          - { name: x86_64-macos,  target: x86_64-macos,  os: macos-15-intel }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+          cache-key: ${{ matrix.target }}
+      - run: zig build test -Dtarget=${{ matrix.target }} --summary all
+
+  build-only:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            name: Linux
-          - os: macos-latest
-            name: macOS
-          - os: windows-latest
-            name: Windows
+          - { name: x86-macos,           target: x86-macos }
+          - { name: arm-linux-gnueabihf, target: arm-linux-gnueabihf }
+          - { name: x86-windows,         target: x86-windows }
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
+      - uses: actions/checkout@v7
+      - uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
-
-      - name: Cache Zig build
-        uses: actions/cache@v6
-        with:
-          path: .zig-cache
-          key: zig-${{ runner.os }}-${{ hashFiles('src/**', 'build.zig', 'build.zig.zon') }}
-          restore-keys: zig-${{ runner.os }}-
-
-      - name: Unit tests
-        shell: bash
-        run: zig build test --summary all --test-timeout 30s
-        env:
-          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-
-      - name: Build (Debug)
-        run: zig build -Doptimize=Debug
-        env:
-          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-
-      - name: Build (ReleaseFast)
-        run: zig build -Doptimize=ReleaseFast
-        env:
-          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-
-  cross-build:
-    name: Cross Build (${{ matrix.target }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - x86_64-macos
-          - aarch64-macos
-          - x86_64-windows
-          - x86-windows
-          - aarch64-linux
-          - x86-linux
-          - riscv64-linux
-          - arm-linux-gnueabihf
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0
-
-      - name: Cache Zig build
-        uses: actions/cache@v6
-        with:
-          path: .zig-cache
-          key: zig-cross-${{ matrix.target }}-${{ hashFiles('src/**', 'build.zig', 'build.zig.zon') }}
-          restore-keys: zig-cross-${{ matrix.target }}-
-
-      - name: Build
-        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=Debug
-        env:
-          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
-          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/.zig-cache
+          version: ${{ env.ZIG_VERSION }}
+          cache-key: ${{ matrix.target }}
+      - run: zig build -Dtarget=${{ matrix.target }} --summary all
