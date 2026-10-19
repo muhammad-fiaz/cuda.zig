@@ -17,7 +17,10 @@ fn getHostNanoseconds() u64 {
         return @intFromFloat((pc_f * 1e9) / freq_f);
     } else {
         var ts: std.posix.timespec = undefined;
-        std.posix.clock_gettime(std.posix.CLOCK.MONOTONIC, &ts) catch return 0;
+        switch (std.posix.errno(std.posix.system.clock_gettime(std.posix.CLOCK.MONOTONIC, &ts))) {
+            .SUCCESS => {},
+            else => return 0,
+        }
         return @intCast(@as(i64, ts.sec) * 1_000_000_000 + ts.nsec);
     }
 }
